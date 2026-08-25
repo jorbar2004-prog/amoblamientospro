@@ -1323,19 +1323,17 @@ async function interpretarConIA(){
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Analizando…';
   document.getElementById('results').innerHTML=`<div class="ai-block"><span class="spinner"></span> Interpretando…</div>`;
 
-  const prompt=`Sos experto en carpintería. El cliente describió: "${desc}"
-Respondé SOLO con JSON válido sin markdown:
-{"a":cm,"al":cm,"p":cm,"e":cm,"mat":"melamina"|"mdf"|"enchapado"|"madera","estantes":n,"divisiones":n,"nPuertas":n,"tipoPuerta":"abatible"|"corrediza"|"vaiven","altoPuertaPct":n,"overlayPuerta":cm,"nCajones":n,"altoCajon":cm,"colCajones":n,"tipoCajon":"overlay"|"embutido","tipoPata":"ninguno"|"zocalo"|"patas-madera"|"patas-metalicas","altoPata":cm,"nPatas":n,"observaciones":"texto"}
-Defaults: e=1.8,mat=melamina,tipoPuerta=abatible,altoPuertaPct=100,overlayPuerta=1.5,tipoCajon=overlay,altoCajon=15,colCajones=1,tipoPata=ninguno,altoPata=10,nPatas=4`;
-
+  // La IA corre en una Cloudflare Pages Function (server-side) para no exponer
+  // la API key en el navegador y evitar el bloqueo CORS de la API de Anthropic.
   let parsed=null,usóIA=true;
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    const resp=await fetch('/api/interpretar',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({desc})
     });
+    if(!resp.ok) throw new Error('api-error');
     const data=await resp.json();
-    const text=data.content?.[0]?.text||'';
+    const text=data.text||'';
     try{parsed=JSON.parse(text.replace(/```json|```/g,'').trim());}
     catch{throw new Error('json');}
   }catch{
