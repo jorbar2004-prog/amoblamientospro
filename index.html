@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Diseñador de Muebles PRO</title>
+<meta name="description" content="Calculadora profesional de muebles: cortes, herrajes, nesting, presupuesto"/>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#12100e"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Fira+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ═══ TOKENS ═══ */
+:root{
+  --bg:#12100e;--s1:#1c1812;--s2:#251f15;--s3:#2e2518;
+  --brd:#3a2e1c;--brd2:#4f3e24;
+  --gold:#c8922a;--gold2:#e8b84b;--gold3:#f5d080;
+  --cream:#ede3cc;--muted:#7a6545;--dim:#9e8560;
+  --danger:#b03a2e;--warn:#b07a1a;--ok:#2e7d4f;
+  --r:3px;
+  --fd:'Playfair Display',serif;--fm:'Fira Mono',monospace;
+  --shadow:0 4px 24px rgba(0,0,0,.45);
+}
+.light{
+  --bg:#f5f0e8;--s1:#ffffff;--s2:#f0ebe0;--s3:#e8e0d0;
+  --brd:#d4c8a8;--brd2:#b8a878;
+  --cream:#2a2010;--muted:#6a5a38;--dim:#7a6a48;
+  --shadow:0 4px 24px rgba(0,0,0,.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--fm);background:var(--bg);color:var(--cream);min-height:100vh;transition:background .3s,color .3s}
+
+/* ═══ HEADER ═══ */
+header{
+  border-bottom:1px solid var(--brd);padding:.9rem 1.5rem;
+  display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;
+  position:sticky;top:0;z-index:200;
+  background:rgba(18,16,14,.96);backdrop-filter:blur(10px);
+}
+.light header{background:rgba(245,240,232,.96)}
+header h1{font-family:var(--fd);font-size:1.3rem;font-weight:900;color:var(--gold2);letter-spacing:-.02em;margin-right:.3rem}
+header .sub{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.hdr-actions{display:flex;gap:.5rem;margin-left:auto;align-items:center;flex-wrap:wrap}
+
+/* ═══ LAYOUT ═══ */
+.app{max-width:1200px;margin:0 auto;padding:1.2rem 1.5rem;display:grid;grid-template-columns:420px 1fr;gap:1.2rem;align-items:start}
+@media(max-width:860px){.app{grid-template-columns:1fr;padding:.8rem}}
+
+/* ═══ CARDS ═══ */
+.card{background:var(--s1);border:1px solid var(--brd);border-radius:var(--r);overflow:hidden}
+.ch{background:var(--s2);border-bottom:1px solid var(--brd);padding:.5rem .95rem;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:.5rem}
+.cb{padding:1rem;display:grid;gap:.85rem}
+
+/* ═══ TABS ═══ */
+.tabs{display:flex;gap:.2rem;background:var(--s2);border-bottom:1px solid var(--brd);padding:.4rem .75rem 0}
+.tab{font-family:var(--fm);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;padding:.32rem .7rem .42rem;transition:all .15s}
+.tab.active{color:var(--gold2);border-bottom-color:var(--gold)}
+.tab:hover:not(.active){color:var(--cream)}
+
+/* ═══ FORM ═══ */
+.sec{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);border-bottom:1px solid var(--brd);padding-bottom:.3rem;margin-bottom:.1rem}
+.field{display:grid;gap:.22rem}
+label{font-size:.58rem;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+input[type=number],input[type=text],select,textarea{
+  width:100%;background:var(--bg);border:1px solid var(--brd);border-radius:var(--r);
+  color:var(--cream);font-family:var(--fm);font-size:.85rem;padding:.42rem .7rem;outline:none;transition:border-color .15s,box-shadow .15s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(200,146,42,.15)}
+input.err{border-color:var(--danger)!important;box-shadow:0 0 0 2px rgba(176,58,46,.2)!important}
+.err-msg{font-size:.6rem;color:var(--danger);margin-top:.15rem}
+textarea{min-height:75px;resize:vertical;line-height:1.5}
+select option{background:var(--s2)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.65rem}
+
+/* Stepper */
+.stepper{display:flex;align-items:center;gap:.3rem}
+.stepper button{width:24px;height:24px;background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);color:var(--cream);cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;transition:border-color .15s;flex-shrink:0}
+.stepper button:hover{border-color:var(--gold);color:var(--gold)}
+.stepper input{text-align:center;flex:1;min-width:0}
+
+/* Toggle */
+.tog-row{display:flex;align-items:center;justify-content:space-between;padding:.18rem 0}
+.tog-lbl{font-size:.72rem;color:var(--cream)}
+.toggle{position:relative;width:33px;height:18px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:var(--brd2);border-radius:20px;cursor:pointer;transition:.2s}
+.slider::before{content:'';position:absolute;width:12px;height:12px;left:3px;bottom:3px;background:var(--muted);border-radius:50%;transition:.2s}
+.toggle input:checked+.slider{background:var(--gold)}
+.toggle input:checked+.slider::before{transform:translateX(15px);background:var(--bg)}
+
+/* ═══ BUTTONS ═══ */
+.btn{font-family:var(--fd);font-size:.9rem;font-weight:700;background:var(--gold);color:var(--bg);border:none;border-radius:var(--r);padding:.65rem 1rem;cursor:pointer;transition:background .15s,transform .1s;width:100%}
+.btn:hover{background:var(--gold2)}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{font-family:var(--fm);font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;background:transparent;border:1px solid var(--brd);color:var(--muted);border-radius:var(--r);padding:.26rem .6rem;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold)}
+.btn-icon{background:transparent;border:1px solid var(--brd);border-radius:var(--r);color:var(--muted);cursor:pointer;padding:.28rem .55rem;font-size:.75rem;transition:all .15s;white-space:nowrap}
+.btn-icon:hover{border-color:var(--gold);color:var(--gold2)}
+
+/* ═══ MÓDULOS ═══ */
+.mod{border:1px solid var(--brd);border-radius:var(--r);overflow:hidden;background:var(--s1)}
+.mod-btn{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--s2);border:none;color:var(--cream);cursor:pointer;padding:.52rem .82rem;font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;transition:background .15s}
+.mod-btn:hover{background:var(--brd)}
+.mod-btn .arr{transition:transform .2s;color:var(--gold);font-size:.65rem}
+.mod-btn.open .arr{transform:rotate(90deg)}
+.mod-body{padding:.82rem;display:none;gap:.72rem;grid-template-columns:1fr}
+.mod-body.open{display:grid}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:8px;background:var(--gold);color:var(--bg);font-size:.56rem;font-weight:700;padding:0 .25rem}
+
+/* ═══ RESULTS ═══ */
+.results{display:grid;gap:.95rem}
+.empty{text-align:center;padding:3.5rem 1rem;color:var(--muted);font-size:.75rem;letter-spacing:.1em}
+
+/* Cut list */
+.cut-head,.cut-row{display:grid;grid-template-columns:2fr .5fr 1fr 1fr 1fr;gap:.4rem;padding:.48rem .9rem;font-size:.75rem;align-items:center}
+.cut-head{background:var(--s2);font-size:.57rem;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.cut-row{border-top:1px solid var(--brd);transition:background .1s}
+.cut-row:hover{background:rgba(200,146,42,.04)}
+.qty{color:var(--gold);font-weight:500}
+.area-c{color:var(--dim);font-size:.68rem}
+
+/* ═══ HERRAJES ═══ */
+.herr-head,.herr-row{display:grid;grid-template-columns:2fr .55fr .65fr;gap:.4rem;padding:.44rem .9rem;font-size:.75rem;align-items:start}
+.herr-head{background:var(--s2);font-size:.57rem;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.herr-cat{padding:.3rem .9rem .18rem;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;font-weight:500;border-top:1px solid var(--brd);margin-top:.08rem}
+.herr-row{border-top:1px solid rgba(58,46,28,.4);transition:background .1s}
+.herr-row:hover{background:rgba(200,146,42,.03)}
+.herr-name{color:var(--cream);line-height:1.4}
+.herr-qty{color:var(--gold);font-weight:500;text-align:right}
+.herr-unit{color:var(--dim);font-size:.68rem}
+
+/* ═══ VALIDACIONES ═══ */
+.alert-box{border-radius:var(--r);padding:.65rem .9rem;font-size:.75rem;line-height:1.6;display:grid;gap:.3rem}
+.alert-warn{background:rgba(176,122,26,.12);border:1px solid rgba(176,122,26,.35);color:#e8b84b}
+.alert-err{background:rgba(176,58,46,.12);border:1px solid rgba(176,58,46,.35);color:#e87b6b}
+.alert-ok{background:rgba(46,125,79,.12);border:1px solid rgba(46,125,79,.35);color:#5dcf8a}
+
+/* ═══ NESTING ═══ */
+.nesting-wrap{overflow-x:auto;padding:.5rem 0}
+#nesting-svg{display:block;min-width:300px}
+.nesting-legend{display:flex;flex-wrap:wrap;gap:.5rem .9rem;padding:.5rem .9rem;font-size:.65rem;color:var(--muted)}
+.nesting-legend span{display:flex;align-items:center;gap:.3rem}
+.nesting-legend i{display:inline-block;width:10px;height:10px;border-radius:2px}
+
+/* ═══ VISTAS 2D ═══ */
+.view-tabs{display:flex;gap:.3rem;padding:.5rem .9rem;border-bottom:1px solid var(--brd);background:var(--s2)}
+.view-tab{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:none;border:none;cursor:pointer;padding:.25rem .55rem;border-radius:2px;transition:all .15s}
+.view-tab.active{background:var(--gold);color:var(--bg)}
+.svg-wrap{overflow:auto;padding:.75rem;display:flex;justify-content:center}
+
+/* ═══ PRESUPUESTO ═══ */
+.pres-table{width:100%;border-collapse:collapse;font-size:.75rem}
+.pres-table th{background:var(--s2);padding:.4rem .7rem;text-align:left;font-size:.58rem;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:400}
+.pres-table td{padding:.4rem .7rem;border-top:1px solid var(--brd)}
+.pres-table tr:hover td{background:rgba(200,146,42,.04)}
+.pres-table .total-row td{border-top:2px solid var(--gold);color:var(--gold2);font-family:var(--fd);font-size:.95rem}
+.pres-price{text-align:right;color:var(--gold2)}
+.pres-input{width:90px;text-align:right;padding:.22rem .4rem;font-size:.75rem}
+
+/* ═══ TOTALES ═══ */
+.totals{padding:.85rem 1rem;display:grid;grid-template-columns:1fr 1fr;gap:.45rem 1.2rem}
+.tot-item{display:flex;justify-content:space-between;align-items:baseline}
+.tot-lbl{font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tot-val{font-family:var(--fd);font-size:.98rem;color:var(--gold2)}
+
+.tag{display:inline-block;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;background:rgba(200,146,42,.12);color:var(--gold);border:1px solid rgba(200,146,42,.22);border-radius:2px;padding:.06rem .3rem}
+
+/* ═══ AI / MISC ═══ */
+.ai-block{background:var(--s1);border:1px solid var(--brd);border-left:3px solid var(--gold);border-radius:var(--r);padding:.8rem .95rem;font-size:.77rem;line-height:1.7;white-space:pre-wrap}
+.spinner{display:inline-block;width:11px;height:11px;border:2px solid var(--brd2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.4rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.export-row{display:flex;gap:.4rem;justify-content:flex-end;flex-wrap:wrap;padding:.5rem .9rem}
+.hint{font-size:.62rem;color:var(--muted);line-height:1.6;padding:.38rem 0;border-top:1px solid var(--brd)}
+
+/* ═══ PROYECTOS ═══ */
+.proj-list{display:grid;gap:.4rem;max-height:200px;overflow-y:auto;padding:.5rem .9rem}
+.proj-item{display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;border:1px solid var(--brd);border-radius:var(--r);cursor:pointer;transition:border-color .15s;font-size:.75rem}
+.proj-item:hover{border-color:var(--gold)}
+.proj-item .proj-name{flex:1;color:var(--cream)}
+.proj-item .proj-date{font-size:.6rem;color:var(--muted)}
+
+/* ═══ PWA INSTALL ═══ */
+#btn-install{display:none;font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;background:rgba(200,146,42,.14);color:var(--gold2);border:1px solid rgba(200,146,42,.32);border-radius:var(--r);padding:.28rem .65rem;cursor:pointer;transition:all .2s;white-space:nowrap;align-items:center;gap:.35rem}
+#btn-install:hover{background:rgba(200,146,42,.26)}
+#btn-install.show{display:flex}
+
+/* ═══ OFFLINE ═══ */
+#offline-bar{display:none;background:var(--danger);color:#fff;text-align:center;padding:.3rem;font-size:.68rem;letter-spacing:.1em}
+
+/* ═══ TUTORIAL ═══ */
+.tour-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center}
+.tour-overlay.show{display:flex}
+.tour-box{background:var(--s1);border:1px solid var(--brd);border-radius:4px;max-width:380px;padding:1.5rem;display:grid;gap:.8rem;box-shadow:var(--shadow);margin:1rem}
+.tour-box h2{font-family:var(--fd);font-size:1.1rem;color:var(--gold2)}
+.tour-box p{font-size:.8rem;line-height:1.65;color:var(--cream)}
+.tour-steps{display:flex;gap:.3rem;justify-content:center}
+.tour-dot{width:7px;height:7px;border-radius:50%;background:var(--brd2);transition:background .2s}
+.tour-dot.active{background:var(--gold)}
+.tour-nav{display:flex;justify-content:space-between;align-items:center;margin-top:.3rem}
+
+/* ═══ MODAL GUARDAR ═══ */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--s1);border:1px solid var(--brd);border-radius:4px;max-width:340px;width:90%;padding:1.2rem;display:grid;gap:.75rem;box-shadow:var(--shadow)}
+.modal-box h3{font-family:var(--fd);color:var(--gold2);font-size:1rem}
+
+/* ═══ PESO PANDEO ═══ */
+.struct-badges{display:flex;flex-wrap:wrap;gap:.4rem;padding:.5rem .9rem}
+.struct-badge{font-size:.65rem;padding:.2rem .55rem;border-radius:2px;border:1px solid;display:flex;align-items:center;gap:.3rem}
+.sb-ok{border-color:rgba(46,125,79,.5);color:#5dcf8a;background:rgba(46,125,79,.1)}
+.sb-warn{border-color:rgba(176,122,26,.5);color:#e8b84b;background:rgba(176,122,26,.1)}
+.sb-err{border-color:rgba(176,58,46,.5);color:#e87b6b;background:rgba(176,58,46,.1)}
+
+@media print{
+  header,#offline-bar,.mod-btn,.btn,.btn-sm,.btn-icon,.export-row,.hdr-actions{display:none!important}
+  .app{display:block}
+  .results{display:block}
+  .card{break-inside:avoid;margin-bottom:.5rem}
+}
+</style>
+</head>
+<body>
+
+<div id="offline-bar">&#9889; Sin conexi&oacute;n &mdash; modo local activo</div>
+
+<header>
+  <h1>Dise&ntilde;ador de Muebles</h1>
+  <span class="sub">PRO</span>
+  <div class="hdr-actions">
+    <button class="btn-icon" onclick="showTour()" title="Tutorial">? Ayuda</button>
+    <button class="btn-icon" onclick="toggleTheme()" id="btn-theme">&#9788; Claro</button>
+    <button class="btn-icon" onclick="showProyectos()">&#128193; Proyectos</button>
+    <button id="btn-install" onclick="instalarApp()">&#8659; Instalar app</button>
+  </div>
+</header>
+
+<!-- TUTORIAL OVERLAY -->
+<div class="tour-overlay" id="tour-overlay">
+  <div class="tour-box">
+    <h2 id="tour-title"></h2>
+    <p id="tour-text"></p>
+    <div class="tour-steps" id="tour-dots"></div>
+    <div class="tour-nav">
+      <button class="btn-sm" onclick="tourNav(-1)">&#8592; Anterior</button>
+      <button class="btn-sm" onclick="tourClose()">Cerrar</button>
+      <button class="btn-sm" onclick="tourNav(1)">Siguiente &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GUARDAR PROYECTO -->
+<div class="modal-overlay" id="modal-guardar">
+  <div class="modal-box">
+    <h3>Guardar proyecto</h3>
+    <div class="field"><label>Nombre del proyecto</label>
+      <input type="text" id="proj-nombre" placeholder="Ej: Ropero dormitorio principal"/></div>
+    <div style="display:flex;gap:.5rem">
+      <button class="btn" style="flex:1" onclick="guardarProyecto()">Guardar</button>
+      <button class="btn-sm" onclick="cerrarModal('modal-guardar')" style="padding:.5rem .9rem">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROYECTOS -->
+<div class="modal-overlay" id="modal-proyectos">
+  <div class="modal-box" style="max-width:420px">
+    <h3>Proyectos guardados</h3>
+    <div class="proj-list" id="proj-list-ui"></div>
+    <button class="btn-sm" onclick="cerrarModal('modal-proyectos')" style="justify-self:end;padding:.4rem .9rem">Cerrar</button>
+  </div>
+</div>
+
+<div class="app">
+<!-- ═══════════ PANEL IZQUIERDO ═══════════ -->
+<div style="display:grid;gap:.8rem">
+
+  <div class="card">
+    <div class="tabs" id="main-tabs">
+      <button class="tab active" onclick="setTab('clasico')">Cl&aacute;sico</button>
+      <button class="tab" onclick="setTab('ia')">IA</button>
+    </div>
+
+    <!-- MODO CLÁSICO -->
+    <div class="cb" id="modo-clasico">
+      <div class="sec">Dimensiones generales</div>
+      <div class="row2">
+        <div class="field"><label>Ancho (cm)</label>
+          <input type="number" id="ancho" value="100" min="10" max="500" step="1" oninput="validarCampo(this,10,500)"/><span class="err-msg" id="err-ancho"></span></div>
+        <div class="field"><label>Alto (cm)</label>
+          <input type="number" id="alto" value="180" min="10" max="300" step="1" oninput="validarCampo(this,10,300)"/><span class="err-msg" id="err-alto"></span></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Profundidad (cm)</label>
+          <input type="number" id="prof" value="45" min="10" max="200" step="1" oninput="validarCampo(this,10,200)"/><span class="err-msg" id="err-prof"></span></div>
+        <div class="field"><label>Espesor tablero (cm)</label>
+          <input type="number" id="espesor" value="1.8" min="0.9" max="5" step="0.1" oninput="validarCampo(this,0.9,5)"/><span class="err-msg" id="err-espesor"></span></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Material</label>
+          <select id="material">
+            <option value="melamina">Melamina 18 mm</option>
+            <option value="mdf">MDF</option>
+            <option value="enchapado">Enchapado</option>
+            <option value="madera">Madera maciza</option>
+          </select></div>
+        <div class="field"><label>Nombre del proyecto</label>
+          <input type="text" id="proj-nombre-inline" placeholder="Mueble sin nombre"/></div>
+      </div>
+      <div class="sec" style="margin-top:.2rem">Presupuesto</div>
+      <div class="row3">
+        <div class="field"><label>$ tablero/m&sup2;</label>
+          <input type="number" id="precio-tablero" value="" min="0" step="100" placeholder="0"/></div>
+        <div class="field"><label>$ mano de obra</label>
+          <input type="number" id="precio-mo" value="" min="0" step="1000" placeholder="0"/></div>
+        <div class="field"><label>$ herrajes est.</label>
+          <input type="number" id="precio-herrajes" value="" min="0" step="500" placeholder="0"/></div>
+      </div>
+    </div>
+
+    <!-- MODO IA -->
+    <div class="cb" id="modo-ia" style="display:none">
+      <div class="field"><label>Describi el mueble</label>
+        <textarea id="descripcion" placeholder="Ej: Ropero de 180×100×60 con 2 puertas abatibles, 3 cajones abajo y zocalo de 10 cm"></textarea></div>
+      <div class="hint">La IA extrae medidas y modulos, y genera observaciones tecnicas.</div>
+      <button class="btn" id="btn-ia" onclick="interpretarConIA()">Interpretar con IA</button>
+    </div>
+  </div>
+
+  <!-- MÓDULOS -->
+  <div class="mod">
+    <button class="mod-btn" onclick="toggleMod(this,'mod-est')">
+      <span>&#128230; Estantes &nbsp;<span class="badge" id="bdg-est">0</span></span><span class="arr">&#9654;</span>
+    </button>
+    <div class="mod-body" id="mod-est">
+      <div class="field"><label>Cantidad de estantes</label>
+        <div class="stepper"><button onclick="step('estantes',-1)">-</button>
+          <input type="number" id="estantes" value="0" min="0" max="20" oninput="sbadge('estantes','bdg-est')"/>
+          <button onclick="step('estantes',1)">+</button></div></div>
+      <div class="hint" style="border:none;padding-top:0">Si hay divisiones verticales, esta cantidad se repite en cada sección (ej: 3 estantes × 2 secciones = 6 piezas).</div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <button class="mod-btn" onclick="toggleMod(this,'mod-div')">
+      <span>&#9638; Divisiones verticales &nbsp;<span class="badge" id="bdg-div">0</span></span><span class="arr">&#9654;</span>
+    </button>
+    <div class="mod-body" id="mod-div">
+      <div class="field"><label>Cantidad de divisiones</label>
+        <div class="stepper"><button onclick="step('divisiones',-1)">-</button>
+          <input type="number" id="divisiones" value="0" min="0" max="10" oninput="sbadge('divisiones','bdg-div')"/>
+          <button onclick="step('divisiones',1)">+</button></div></div>
+      <div class="hint" style="border:none;padding-top:0">Divide el interior en secciones iguales.</div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <button class="mod-btn" onclick="toggleMod(this,'mod-puerta')">
+      <span>&#128682; Puertas &nbsp;<span class="badge" id="bdg-puerta">0</span></span><span class="arr">&#9654;</span>
+    </button>
+    <div class="mod-body" id="mod-puerta">
+      <div class="row2">
+        <div class="field"><label>Cantidad</label>
+          <div class="stepper"><button onclick="step('n-puertas',-1)">-</button>
+            <input type="number" id="n-puertas" value="0" min="0" max="10" oninput="sbadge('n-puertas','bdg-puerta')"/>
+            <button onclick="step('n-puertas',1)">+</button></div></div>
+        <div class="field"><label>Tipo</label>
+          <select id="tipo-puerta">
+            <option value="abatible">Abatible</option>
+            <option value="corrediza">Corrediza</option>
+            <option value="vaiven">Vaiv&eacute;n</option>
+          </select></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Alto puerta (% interior)</label>
+          <input type="number" id="alto-puerta-pct" value="100" min="10" max="100" step="5"/></div>
+        <div class="field"><label>Overlay (cm)</label>
+          <input type="number" id="overlay-puerta" value="1.5" min="0" step="0.5"/></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <button class="mod-btn" onclick="toggleMod(this,'mod-caj')">
+      <span>&#128451; Cajonera &nbsp;<span class="badge" id="bdg-caj">0</span></span><span class="arr">&#9654;</span>
+    </button>
+    <div class="mod-body" id="mod-caj">
+      <div class="row2">
+        <div class="field"><label>Filas de cajones</label>
+          <div class="stepper"><button onclick="step('n-cajones',-1)">-</button>
+            <input type="number" id="n-cajones" value="0" min="0" max="20" oninput="sbadge('n-cajones','bdg-caj')"/>
+            <button onclick="step('n-cajones',1)">+</button></div></div>
+        <div class="field"><label>Alto caj&oacute;n (cm)</label>
+          <input type="number" id="alto-cajon" value="15" min="5" step="1"/></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Columnas</label>
+          <div class="stepper"><button onclick="step('col-cajones',-1)">-</button>
+            <input type="number" id="col-cajones" value="1" min="1" max="4"/>
+            <button onclick="step('col-cajones',1)">+</button></div></div>
+        <div class="field"><label>Frente</label>
+          <select id="tipo-cajon">
+            <option value="overlay">Overlay</option>
+            <option value="embutido">Embutido</option>
+          </select></div>
+      </div>
+      <div class="tog-row">
+        <span class="tog-lbl">Fondo de caj&oacute;n HDF</span>
+        <label class="toggle"><input type="checkbox" id="fondo-cajon" checked/><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <button class="mod-btn" onclick="toggleMod(this,'mod-pata')">
+      <span>&#129462; Patas / Z&oacute;calo</span><span class="arr">&#9654;</span>
+    </button>
+    <div class="mod-body" id="mod-pata">
+      <div class="field"><label>Tipo de apoyo</label>
+        <select id="tipo-pata" onchange="updatePataUI()">
+          <option value="ninguno">Sin patas / sin z&oacute;calo</option>
+          <option value="zocalo">Z&oacute;calo perimetral (tablero)</option>
+          <option value="patas-madera">Patas de madera</option>
+          <option value="patas-metalicas">Patas met&aacute;licas</option>
+        </select></div>
+      <div id="pata-extra" style="display:none;gap:.72rem" class="row2">
+        <div class="field"><label id="lbl-pata">Alto (cm)</label>
+          <input type="number" id="alto-pata" value="10" min="3" step="1"/></div>
+        <div class="field" id="wrap-npatas" style="display:none"><label>Cantidad patas</label>
+          <input type="number" id="n-patas" value="4" min="2" step="1"/></div>
+      </div>
+      <div class="tog-row" id="wrap-trav" style="display:none">
+        <span class="tog-lbl">Z&oacute;calo con traves&ntilde;o posterior</span>
+        <label class="toggle"><input type="checkbox" id="zoc-trav" checked/><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr auto;gap:.5rem">
+    <button class="btn" onclick="calcularDesdeForm()">Calcular lista de corte</button>
+    <button class="btn-sm" style="padding:.5rem .8rem" onclick="abrirModalGuardar()">&#128190; Guardar</button>
+  </div>
+
+</div>
+<!-- ═══════════ FIN PANEL IZQ ═══════════ -->
+
+<!-- ═══════════ RESULTADOS ═══════════ -->
+<div class="results" id="results">
+  <div class="empty">
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin:0 auto 1rem;display:block;opacity:.4">
+      <rect x="8" y="5" width="32" height="38" rx="2" stroke="#c8922a" stroke-width="1.4"/>
+      <line x1="8" y1="18" x2="40" y2="18" stroke="#c8922a" stroke-width=".9"/>
+      <line x1="8" y1="31" x2="40" y2="31" stroke="#c8922a" stroke-width=".9"/>
+      <line x1="24" y1="5" x2="24" y2="43" stroke="#c8922a" stroke-width=".7" stroke-dasharray="3 2"/>
+    </svg>
+    <p>Configura el mueble<br>y presiona <strong style="color:var(--gold)">Calcular</strong></p>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ════════════════════════════════════════════════════
+// CONSTANTES Y ESTADO
+// ════════════════════════════════════════════════════
+const PLANCHA_W = 260; // cm plancha estándar
+const PLANCHA_H = 183;
+const DENSIDAD  = { melamina:750, mdf:800, enchapado:600, madera:650 }; // kg/m³
+
+// ════════════════════════════════════════════════════
+// UI HELPERS
+// ════════════════════════════════════════════════════
+function setTab(t){
+  document.getElementById('modo-clasico').style.display = t==='clasico'?'grid':'none';
+  document.getElementById('modo-ia').style.display      = t==='ia'?'grid':'none';
+  document.querySelectorAll('#main-tabs .tab').forEach((b,i)=>{
+    b.classList.toggle('active',(i===0&&t==='clasico')||(i===1&&t==='ia'));
+  });
+}
+function toggleMod(btn,id){
+  btn.classList.toggle('open');
+  document.getElementById(id).classList.toggle('open');
+}
+function openMod(id){
+  const c=document.getElementById(id);if(!c)return;
+  c.previousElementSibling&&c.previousElementSibling.classList.add('open');
+  c.classList.add('open');
+}
+function step(id,d){
+  const el=document.getElementById(id);
+  el.value=Math.max(+(el.min||0),+(el.value||0)+d);
+  el.dispatchEvent(new Event('input'));
+}
+function sbadge(iid,bid){
+  document.getElementById(bid).textContent=+document.getElementById(iid).value||0;
+}
+function updatePataUI(){
+  const t=document.getElementById('tipo-pata').value;
+  const show=t!=='ninguno';
+  document.getElementById('pata-extra').style.display=show?'grid':'none';
+  document.getElementById('wrap-npatas').style.display=(t==='patas-madera'||t==='patas-metalicas')?'':'none';
+  document.getElementById('wrap-trav').style.display=t==='zocalo'?'flex':'none';
+  document.getElementById('lbl-pata').textContent=t==='zocalo'?'Alto zócalo (cm)':'Alto pata (cm)';
+}
+function cerrarModal(id){document.getElementById(id).classList.remove('show')}
+
+// Validación de campos con mensajes inline
+function validarCampo(el,min,max){
+  const v=+el.value;
+  const errId='err-'+el.id;
+  const errEl=document.getElementById(errId);
+  if(!errEl)return true;
+  if(isNaN(v)||v<min){
+    el.classList.add('err');
+    errEl.textContent=`Mínimo ${min} cm`;
+    return false;
+  } else if(v>max){
+    el.classList.add('err');
+    errEl.textContent=`Máximo ${max} cm`;
+    return false;
+  } else {
+    el.classList.remove('err');
+    errEl.textContent='';
+    return true;
+  }
+}
+function validarTodo(){
+  const campos=[
+    {id:'ancho',min:10,max:500},{id:'alto',min:10,max:300},
+    {id:'prof',min:10,max:200},{id:'espesor',min:0.9,max:5}
+  ];
+  return campos.every(c=>{
+    const el=document.getElementById(c.id);
+    return validarCampo(el,c.min,c.max);
+  });
+}
+
+// ════════════════════════════════════════════════════
+// LEER / RELLENAR FORM
+// ════════════════════════════════════════════════════
+function leerForm(){
+  const g=id=>document.getElementById(id);
+  return{
+    nombre: g('proj-nombre-inline').value||'Mueble',
+    a:   +g('ancho').value   ||100,
+    al:  +g('alto').value    ||180,
+    p:   +g('prof').value    ||45,
+    e:   +g('espesor').value ||1.8,
+    mat: g('material').value,
+    pxm2:  +g('precio-tablero').value||0,
+    pxmo:  +g('precio-mo').value||0,
+    pxherr:+g('precio-herrajes').value||0,
+    estantes:   +g('estantes').value       ||0,
+    divisiones: +g('divisiones').value     ||0,
+    nPuertas:   +g('n-puertas').value      ||0,
+    tipoPuerta: g('tipo-puerta').value,
+    altoPuertaPct:+g('alto-puerta-pct').value||100,
+    overlayPuerta:+g('overlay-puerta').value ||1.5,
+    nCajones:   +g('n-cajones').value      ||0,
+    altoCajon:  +g('alto-cajon').value     ||15,
+    colCajones: +g('col-cajones').value    ||1,
+    tipoCajon:  g('tipo-cajon').value,
+    fondoCajon: g('fondo-cajon').checked,
+    tipoPata:   g('tipo-pata').value,
+    altoPata:   +g('alto-pata').value      ||10,
+    nPatas:     +g('n-patas').value        ||4,
+    zocTrav:    g('zoc-trav').checked,
+  };
+}
+function rellenarForm(d){
+  const s=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined)e.value=v};
+  s('ancho',d.a);s('alto',d.al);s('prof',d.p);s('espesor',d.e||1.8);
+  if(d.mat) document.getElementById('material').value=d.mat;
+  s('estantes',d.estantes||0);    sbadge('estantes','bdg-est');
+  s('divisiones',d.divisiones||0);sbadge('divisiones','bdg-div');
+  s('n-puertas',d.nPuertas||0);   sbadge('n-puertas','bdg-puerta');
+  s('n-cajones',d.nCajones||0);   sbadge('n-cajones','bdg-caj');
+  s('alto-cajon',d.altoCajon||15);
+  s('col-cajones',d.colCajones||1);
+  if(d.tipoPuerta) document.getElementById('tipo-puerta').value=d.tipoPuerta;
+  if(d.tipoPata){document.getElementById('tipo-pata').value=d.tipoPata;updatePataUI();}
+  s('alto-pata',d.altoPata||10);s('n-patas',d.nPatas||4);
+  if(d.estantes>0)   openMod('mod-est');
+  if(d.divisiones>0) openMod('mod-div');
+  if(d.nPuertas>0)   openMod('mod-puerta');
+  if(d.nCajones>0)   openMod('mod-caj');
+  if(d.tipoPata&&d.tipoPata!=='ninguno') openMod('mod-pata');
+}
+
+// ════════════════════════════════════════════════════
+// MOTOR — TABLEROS
+// ════════════════════════════════════════════════════
+function calcularPiezas(d){
+  const{a,al,p,e,estantes,divisiones,
+    nPuertas,tipoPuerta,altoPuertaPct,overlayPuerta,
+    nCajones,altoCajon,colCajones,tipoCajon,fondoCajon,
+    tipoPata,altoPata,nPatas,zocTrav}=d;
+  const piezas=[];
+  const add=(nombre,cantidad,ancho,alto,nota='',tipo='tablero')=>
+    cantidad>0&&piezas.push({nombre,cantidad,ancho:+ancho.toFixed(1),alto:+alto.toFixed(1),nota,tipo});
+
+  const alCuerpo=tipoPata!=='ninguno'?al-altoPata:al;
+  const alInt=alCuerpo-2*e;
+  const aInt=a-2*e;
+
+  add('Lateral',       2, alCuerpo, p);
+  add('Base',          1, aInt,     p);
+  add('Tapa',          1, aInt,     p);
+  add('Fondo HDF 4mm', 1, a, alCuerpo, 'ranura o clavado','hdf');
+
+  if(estantes>0){
+    const mult=divisiones>0?divisiones+1:1;
+    const anchoEst=divisiones>0?aInt/(divisiones+1):aInt;
+    add('Estante',estantes*mult,anchoEst,p-e,divisiones>0?`${divisiones+1} celdas`:'');
+  }
+  if(divisiones>0) add('División vertical',divisiones,alInt,p-e);
+
+  if(nPuertas>0){
+    const anchoPuerta=a/nPuertas+overlayPuerta;
+    const altoPuerta=alInt*(altoPuertaPct/100)+overlayPuerta*2;
+    add(`Puerta (${tipoPuerta})`,nPuertas,anchoPuerta,altoPuerta);
+  }
+  if(nCajones>0){
+    const cols=Math.max(1,colCajones),total=nCajones*cols;
+    const anchoBox=(aInt/cols)-e*2-1;
+    const profBox=p-e-5,altoBox=altoCajon-e;
+    if(tipoCajon==='overlay')
+      add('Frente cajón (overlay)',  total,aInt/cols+overlayPuerta*2,altoCajon+overlayPuerta*2);
+    else
+      add('Frente cajón (embutido)', total,aInt/cols-2,altoCajon-2);
+    add('Lateral cajón', total*2,profBox,altoBox);
+    add('Trasero cajón', total,  anchoBox,altoBox);
+    if(fondoCajon) add('Base cajón HDF 4mm',total,anchoBox+e,profBox,'','hdf');
+  }
+  if(tipoPata==='zocalo'){
+    add('Zócalo frente',1,a,altoPata);add('Zócalo fondo',1,a,altoPata);
+    add('Zócalo lateral',2,p-e*2,altoPata);
+    if(zocTrav) add('Travesaño posterior',1,a-e*2,altoPata);
+  }
+  if(tipoPata==='patas-madera')    add('Pata de madera',nPatas,5,altoPata,'tornear o comprar','extra');
+  if(tipoPata==='patas-metalicas') add('Patas metálicas',nPatas,0,0,`comprar: ${altoPata} cm`,'extra');
+  return piezas;
+}
+
+// ════════════════════════════════════════════════════
+// MOTOR — HERRAJES
+// ════════════════════════════════════════════════════
+function calcularHerrajes(d){
+  const{a,al,p,e,estantes,divisiones,
+    nPuertas,tipoPuerta,altoPuertaPct,overlayPuerta,
+    nCajones,altoCajon,colCajones,fondoCajon,
+    tipoPata,altoPata,nPatas,zocTrav}=d;
+  const items=[];
+  const add=(cat,nombre,cant,unidad,nota='')=>
+    items.push({cat,nombre,cant:Math.ceil(cant),unidad,nota});
+
+  const alCuerpo=tipoPata!=='ninguno'?al-altoPata:al;
+  const alInt=alCuerpo-2*e;
+  const aInt=a-2*e;
+  const totalEst=estantes*(divisiones>0?divisiones+1:1);
+  const totalCaj=nCajones*Math.max(1,colCajones);
+
+  // TAPACANTO
+  const tcLat=alCuerpo*2,tcBT=aInt*2;
+  const tcEst=totalEst*(divisiones>0?aInt/(divisiones+1):aInt);
+  const tcDiv=divisiones*alInt;
+  const tcPuerta=nPuertas>0?nPuertas*2*((a/nPuertas+overlayPuerta)+(alInt*(altoPuertaPct/100)+overlayPuerta*2)):0;
+  const tcCaj=totalCaj*(p-e-5)*2;
+  const tcZoc=tipoPata==='zocalo'?(a*2+(p-e*2)*2):0;
+  const tcTotal=tcLat+tcBT+tcEst+tcDiv+tcPuerta+tcCaj+tcZoc;
+  add('Tapacanto','Tapacanto PVC/ABS 22 mm',(tcTotal/100)*1.12,'m','+12% desperdicio');
+
+  // TORNILLOS ESTRUCTURA
+  const ens=(2+1+1)*4+totalEst*4+divisiones*4+(tipoPata==='zocalo'?8:0);
+  add('Tornillos','Confirmat 7×50 mm (unión tableros)',ens*1.15,'u','llave allen 5 mm');
+
+  // TORNILLOS FONDO
+  const tornFondo=Math.ceil(2*(a+alCuerpo)/12);
+  const tornCaj=totalCaj*8;
+  add('Tornillos','Tornillo rápido 4×30 mm (fondos)',(tornFondo+tornCaj)*1.10,'u','cada 12 cm aprox.');
+
+  // BISAGRAS
+  if(nPuertas>0&&tipoPuerta!=='corrediza'){
+    const altoCadaPuerta=alInt*(altoPuertaPct/100);
+    const bisxP=altoCadaPuerta>120?3:2;
+    const totalBis=nPuertas*bisxP;
+    add('Bisagras',`Bisagra cazoleta 35 mm clip-on`,totalBis,'u',`${bisxP} por puerta`);
+    add('Tornillos','Tornillo bisagra 3.5×16 mm',totalBis*4,'u','2 taco + 2 placa');
+  }
+  if(nPuertas>0&&tipoPuerta==='corrediza'){
+    add('Herrajes','Kit perfil aluminio corredizo',1,'juego',`largo ${a} cm`);
+  }
+
+  // PITUTOS
+  if(totalEst>0) add('Herrajes','Pituto soporte estante 5 mm',totalEst*4*1.25,'u','4 por estante +25%');
+
+  // GUÍAS CAJÓN
+  if(totalCaj>0){
+    const lg=Math.round(p-e-7);
+    add('Herrajes',`Guía telescópica ${lg} cm (par)`,totalCaj,'par','extensión total');
+    add('Tornillos','Tornillo aglom. 4×20 mm (guías)',totalCaj*8,'u','4 por guía');
+  }
+
+  // TIRADORES
+  const nTir=nPuertas+totalCaj;
+  if(nTir>0){
+    add('Herrajes','Tirador barra 128 mm o botonera',nTir,'u','a elección');
+    add('Tornillos','Tornillo tirador M4×35 mm',nTir*2,'u','2 por tirador, pasante');
+  }
+
+  // PATAS METÁLICAS
+  if(tipoPata==='patas-metalicas'){
+    add('Herrajes','Pata metálica regulable',nPatas,'u',`${altoPata} cm`);
+    add('Tornillos','Tornillo pata 5×20 mm',nPatas*4,'u','4 por pata');
+  }
+
+  // TARUGOS
+  add('Herrajes','Tarugo madera 8×30 mm',divisiones*4+8,'u','alineación y refuerzo');
+
+  // CONSUMIBLES
+  const nUni=totalEst+divisiones+2+totalCaj*2;
+  add('Consumibles','Cola vinílica para madera',Math.max(250,Math.ceil(nUni/8)*250),'ml','');
+  add('Consumibles','Lija grano 120',2,'pliegos','desbaste cantos');
+  add('Consumibles','Lija grano 220',2,'pliegos','terminación fina');
+
+  return items;
+}
+
+// ════════════════════════════════════════════════════
+// MOTOR — VALIDACIONES ESTRUCTURALES
+// ════════════════════════════════════════════════════
+function validacionesEstructurales(d,piezas){
+  const{a,al,p,e,estantes,divisiones,nCajones,altoCajon,colCajones}=d;
+  const alCuerpo=d.tipoPata!=='ninguno'?al-d.altoPata:al;
+  const alInt=alCuerpo-2*e;
+  const aInt=a-2*e;
+  const alertas=[];
+
+  // Pandeo de estantes (vano libre > 70 cm en melamina 18mm → riesgo)
+  const vanoEst=divisiones>0?aInt/(divisiones+1):aInt;
+  if(estantes>0&&vanoEst>70&&e<=1.8){
+    alertas.push({tipo:'warn',msg:`Vano de estante: ${vanoEst.toFixed(1)} cm. En melamina 18 mm puede pandear. Considerá usar refuerzo central o aumentar espesor a 25 mm.`});
+  }
+  if(estantes>0&&vanoEst>90){
+    alertas.push({tipo:'err',msg:`Vano de estante: ${vanoEst.toFixed(1)} cm es excesivo para tableros estándar. Se recomienda máximo 80 cm sin refuerzo.`});
+  }
+
+  // Cajones más altos que el espacio disponible
+  if(nCajones>0){
+    const altoCajoneriaTotal=nCajones*altoCajon;
+    const colCaj=Math.max(1,colCajones);
+    if(altoCajoneriaTotal>alInt*0.9){
+      alertas.push({tipo:'warn',msg:`Los ${nCajones} cajones de ${altoCajon} cm suman ${altoCajoneriaTotal} cm, lo que ocupa más del 90% del interior disponible (${alInt.toFixed(1)} cm).`});
+    }
+  }
+
+  // Profundidad mínima para cajones
+  if(nCajones>0&&p<32){
+    alertas.push({tipo:'warn',msg:`Profundidad de ${p} cm es muy ajustada para cajones. Se recomiendan mínimo 35 cm.`});
+  }
+
+  // Proporción ancho/alto inestable
+  if(al/a>4&&e<=1.8){
+    alertas.push({tipo:'warn',msg:`Relación alto/ancho (${(al/a).toFixed(1)}:1) indica mueble muy alto y estrecho. Considerar refuerzo o anclaje a pared.`});
+  }
+
+  // Todo OK
+  if(alertas.length===0){
+    alertas.push({tipo:'ok',msg:'Estructura correcta. No se detectaron problemas de resistencia.'});
+  }
+
+  return alertas;
+}
+
+// ════════════════════════════════════════════════════
+// MOTOR — PESO
+// ════════════════════════════════════════════════════
+function calcularPeso(piezas,mat,e){
+  const densidad=DENSIDAD[mat]||700;
+  let volumen=0;
+  piezas.forEach(pc=>{
+    if(pc.tipo==='extra') return;
+    const esp=pc.tipo==='hdf'?0.4:e;
+    volumen+=pc.cantidad*(pc.ancho/100)*(pc.alto/100)*(esp/100);
+  });
+  return (volumen*densidad).toFixed(1);
+}
+
+// ════════════════════════════════════════════════════
+// MOTOR — NESTING (distribución en planchas)
+// ════════════════════════════════════════════════════
+function calcularNesting(piezas){
+  // Expandir piezas individuales (sin HDF ni extras)
+  const rects=[];
+  piezas.forEach(pc=>{
+    if(pc.tipo==='extra') return;
+    for(let i=0;i<pc.cantidad;i++){
+      rects.push({w:pc.ancho,h:pc.alto,nombre:pc.nombre,placed:false});
+    }
+  });
+  // Ordenar por área descendente
+  rects.sort((a,b)=>(b.w*b.h)-(a.w*a.h));
+
+  // Algoritmo guillotina simple por planchas
+  const planchas=[];
+  for(const rect of rects){
+    let colocado=false;
+    for(const plancha of planchas){
+      if(colocarEnPlancha(plancha,rect)){colocado=true;break;}
+    }
+    if(!colocado){
+      const nuevaPlancha={w:PLANCHA_W,h:PLANCHA_H,piezas:[],espacios:[{x:0,y:0,w:PLANCHA_W,h:PLANCHA_H}]};
+      planchas.push(nuevaPlancha);
+      colocarEnPlancha(nuevaPlancha,rect);
+    }
+  }
+  return planchas;
+}
+
+function colocarEnPlancha(plancha,rect){
+  const margen=0.5; // mm de sierra
+  for(let i=0;i<plancha.espacios.length;i++){
+    const esp=plancha.espacios[i];
+    const rw=rect.w+margen,rh=rect.h+margen;
+    if(rw<=esp.w&&rh<=esp.h){
+      plancha.piezas.push({x:esp.x,y:esp.y,w:rect.w,h:rect.h,nombre:rect.nombre});
+      // Dividir espacio restante (guillotina horizontal primero)
+      const nuevos=[];
+      if(esp.w-rw>2) nuevos.push({x:esp.x+rw,y:esp.y,w:esp.w-rw,h:rh});
+      if(esp.h-rh>2) nuevos.push({x:esp.x,y:esp.y+rh,w:esp.w,h:esp.h-rh});
+      plancha.espacios.splice(i,1,...nuevos);
+      return true;
+    }
+  }
+  return false;
+}
+
+// ════════════════════════════════════════════════════
+// RENDER PRINCIPAL
+// ════════════════════════════════════════════════════
+function renderizarResultados(d,iaText=null){
+  const piezas   =calcularPiezas(d);
+  const herrajes =calcularHerrajes(d);
+  const alertas  =validacionesEstructurales(d,piezas);
+  const planchas =calcularNesting(piezas.filter(p=>p.tipo!=='extra'&&p.tipo!=='hdf'));
+  const matLabel ={melamina:'Melamina',mdf:'MDF',enchapado:'Enchapado',madera:'Madera maciza'}[d.mat]||d.mat;
+  const peso     =calcularPeso(piezas,d.mat,d.e);
+
+  let areaTotal=0;
+  piezas.forEach(pc=>{areaTotal+=pc.cantidad*(pc.ancho*pc.alto)/10000;});
+  const areaDesp=areaTotal*1.10;
+  const nPiezas =piezas.reduce((s,p)=>s+p.cantidad,0);
+
+  // Presupuesto
+  const costoTab  =d.pxm2>0?areaDesp*d.pxm2:0;
+  const costoMO   =d.pxmo||0;
+  const costoHerr =d.pxherr||0;
+  const costoTotal=costoTab+costoMO+costoHerr;
+
+  // Filas tableros
+  const filas=piezas.map(pc=>{
+    const ar=pc.ancho>0?(pc.cantidad*pc.ancho*pc.alto/10000).toFixed(3):'0';
+    const nota=pc.nota?`<small style="color:var(--muted);font-size:.6rem"> (${pc.nota})</small>`:'';
+    const da=pc.ancho===0?'&mdash;':`${pc.ancho}`;
+    const db=pc.alto===0 ?'&mdash;':`${pc.alto}`;
+    const da2=pc.ancho===0?''  :' cm';
+    const db2=pc.alto===0 ?''  :' cm';
+    const arc=pc.ancho===0?'&mdash;':`${ar} m&sup2;`;
+    return`<div class="cut-row">
+      <span>${pc.nombre}${nota}</span>
+      <span class="qty">&times;${pc.cantidad}</span>
+      <span style="color:var(--cream)">${da}${da2}</span>
+      <span style="color:var(--cream)">${db}${db2}</span>
+      <span class="area-c">${arc}</span>
+    </div>`;
+  }).join('');
+
+  // Filas herrajes
+  const catC={'Tapacanto':'#5aaa88','Tornillos':'#cc8866','Bisagras':'#7799cc','Herrajes':'#aa88cc','Consumibles':'#888'};
+  const cats=[...new Set(herrajes.map(h=>h.cat))];
+  const herr=cats.map(cat=>{
+    const color=catC[cat]||'#999';
+    return`<div class="herr-cat" style="color:${color}">${cat}</div>`+
+      herrajes.filter(h=>h.cat===cat).map(h=>`
+      <div class="herr-row">
+        <span class="herr-name">${h.nombre}${h.nota?`<br><small style="color:var(--muted);font-size:.6rem">${h.nota}</small>`:''}</span>
+        <span class="herr-qty">${h.cant}</span>
+        <span class="herr-unit">${h.unidad}</span>
+      </div>`).join('');
+  }).join('');
+
+  // Alertas estructurales
+  const alertHTML=alertas.map(a=>`
+    <div class="alert-box alert-${a.tipo}">
+      ${a.tipo==='ok'?'&#10003;':a.tipo==='warn'?'&#9888;':'&#10005;'} ${a.msg}
+    </div>`).join('');
+
+  // Badges de resumen
+  const badges=`
+    <div class="struct-badges">
+      <div class="struct-badge sb-ok">&#9881; Peso est. ${peso} kg</div>
+      <div class="struct-badge sb-ok">&#9632; ${planchas.length} plancha${planchas.length!==1?'s':''} necesaria${planchas.length!==1?'s':''}</div>
+      <div class="struct-badge ${areaDesp>PLANCHA_W*PLANCHA_H/10000*planchas.length*0.9?'sb-warn':'sb-ok'}">
+        &#9650; ${areaDesp.toFixed(2)} m&sup2; con desperdicio
+      </div>
+    </div>`;
+
+  // Nesting SVG
+  const nestSVG=renderNestingSVG(planchas);
+
+  // Presupuesto tabla
+  const presHTML=costoTotal>0?`
+  <div class="card">
+    <div class="ch">&#128181; Presupuesto estimado</div>
+    <table class="pres-table">
+      <thead><tr><th>Concepto</th><th>Detalle</th><th style="text-align:right">Subtotal</th></tr></thead>
+      <tbody>
+        ${costoTab>0?`<tr><td>Tablero (${matLabel})</td><td>${areaDesp.toFixed(2)} m² &times; $${d.pxm2.toLocaleString('es-AR')}</td><td class="pres-price">$${costoTab.toLocaleString('es-AR',{maximumFractionDigits:0})}</td></tr>`:''}
+        ${costoMO>0 ?`<tr><td>Mano de obra</td><td>Estimado</td><td class="pres-price">$${costoMO.toLocaleString('es-AR',{maximumFractionDigits:0})}</td></tr>`:''}
+        ${costoHerr>0?`<tr><td>Herrajes</td><td>Estimado</td><td class="pres-price">$${costoHerr.toLocaleString('es-AR',{maximumFractionDigits:0})}</td></tr>`:''}
+        <tr class="total-row"><td colspan="2"><strong>TOTAL</strong></td><td class="pres-price"><strong>$${costoTotal.toLocaleString('es-AR',{maximumFractionDigits:0})}</strong></td></tr>
+      </tbody>
+    </table>
+  </div>`:'';
+
+  const iaBlock=iaText?`
+  <div class="card">
+    <div class="ch">&#10022; An&aacute;lisis IA</div>
+    <div class="cb"><div class="ai-block">${iaText}</div></div>
+  </div>`:'';
+
+  document.getElementById('results').innerHTML=`
+  ${iaBlock}
+
+  <div class="card">
+    <div class="ch">Vista previa &nbsp;<span class="tag">${matLabel}</span></div>
+    <div class="view-tabs">
+      <button class="view-tab active" onclick="setView('iso')">Isom&eacute;trica</button>
+      <button class="view-tab" onclick="setView('frontal')">Frontal</button>
+      <button class="view-tab" onclick="setView('planta')">Planta</button>
+    </div>
+    <div class="svg-wrap" id="svg-main">${svgMueble(d)}</div>
+    ${badges}
+  </div>
+
+  <div class="card">
+    <div class="ch">&#9888; Verificaci&oacute;n estructural</div>
+    <div class="cb">${alertHTML}</div>
+  </div>
+
+  <div class="card">
+    <div class="ch">&#128203; Lista de corte &nbsp;&middot;&nbsp; ${nPiezas} piezas</div>
+    <div class="cut-head"><span>Pieza</span><span>Cant.</span><span>Ancho</span><span>Alto</span><span>&Aacute;rea</span></div>
+    ${filas}
+  </div>
+
+  <div class="card">
+    <div class="ch">&#9643; Distribuci&oacute;n en planchas (nesting)</div>
+    <div class="nesting-wrap">${nestSVG}</div>
+    <div class="nesting-legend" id="nesting-legend"></div>
+  </div>
+
+  <div class="card">
+    <div class="ch">&#128297; Herrajes y consumibles</div>
+    <div class="herr-head"><span>&Iacute;tem</span><span>Cant.</span><span>Unidad</span></div>
+    ${herr}
+  </div>
+
+  ${presHTML}
+
+  <div class="card">
+    <div class="ch">&#128202; Resumen de material</div>
+    <div class="totals">
+      <div class="tot-item"><span class="tot-lbl">&Aacute;rea neta</span><span class="tot-val">${areaTotal.toFixed(3)} m&sup2;</span></div>
+      <div class="tot-item"><span class="tot-lbl">+10% desperdicio</span><span class="tot-val">${areaDesp.toFixed(3)} m&sup2;</span></div>
+      <div class="tot-item"><span class="tot-lbl">Piezas totales</span><span class="tot-val">${nPiezas}</span></div>
+      <div class="tot-item"><span class="tot-lbl">Peso estimado</span><span class="tot-val">${peso} kg</span></div>
+    </div>
+  </div>
+
+  <div class="export-row">
+    <button class="btn-sm" onclick="exportarCSV()">&#8595; CSV</button>
+    <button class="btn-sm" onclick="exportarTXT()">&#8595; TXT</button>
+    <button class="btn-sm" onclick="window.print()">&#128424; Imprimir</button>
+  </div>`;
+
+  window._lastPiezas   =piezas;
+  window._lastHerrajes =herrajes;
+  window._lastData     =d;
+
+  buildNestingLegend(planchas);
+  window._svgData={d};
+}
+
+// ════════════════════════════════════════════════════
+// SVG ISOMÉTRICO
+// ════════════════════════════════════════════════════
+function svgMueble(d){
+  const{a,al,p,e,estantes,divisiones,nPuertas,nCajones,altoCajon,colCajones,tipoPuerta,tipoPata,altoPata,nPatas}=d;
+  const S=Math.min(180/al,260/a,2.2);
+  const W=a*S,H=al*S,D=p*S*0.33,E=e*S;
+  const PAT=tipoPata!=='ninguno'?altoPata*S:0;
+  const Hc=H-PAT;
+  const ox=26,oy=14;
+  const svgW=W+D+ox+18,svgH=H+D+oy+22;
+  let ex='';
+
+  if(estantes>0){
+    const hi=Hc-2*E,step=hi/(estantes+1);
+    for(let i=1;i<=estantes;i++){
+      const yy=oy+D+E+step*i;
+      ex+=`<line x1="${ox+E}" y1="${yy}" x2="${ox+W-E}" y2="${yy}" stroke="#c8922a" stroke-width=".75" stroke-dasharray="5 2" opacity=".9"/>`;
+    }
+  }
+  if(divisiones>0){
+    const step=(W-2*E)/(divisiones+1);
+    for(let i=1;i<=divisiones;i++){
+      const xx=ox+E+step*i;
+      ex+=`<line x1="${xx}" y1="${oy+D+E}" x2="${xx}" y2="${oy+D+Hc-E}" stroke="#e8b84b" stroke-width=".75" stroke-dasharray="4 2" opacity=".85"/>`;
+    }
+  }
+  if(nPuertas>0){
+    const pw=W/nPuertas;
+    const phPct=(d.altoPuertaPct||100)/100,phSvg=(Hc-2*E)*phPct,pyOff=(Hc-2*E-phSvg)/2;
+    for(let i=0;i<nPuertas;i++){
+      const px=ox+pw*i+pw*.06,py=oy+D+E+pyOff;
+      ex+=`<rect x="${px}" y="${py}" width="${pw*.88}" height="${phSvg}" fill="rgba(200,146,42,.07)" stroke="#c8922a" stroke-width=".7" rx="1.5"/>`;
+      ex+=`<circle cx="${px+pw*.44}" cy="${py+phSvg/2}" r="2.3" fill="none" stroke="#e8b84b" stroke-width="1.1"/>`;
+    }
+  }
+  if(nCajones>0){
+    const ch=altoCajon*S,cols=Math.max(1,colCajones),cw=(W-2*E)/cols;
+    for(let row=0;row<nCajones;row++)
+      for(let col=0;col<cols;col++){
+        const cx=ox+E+cw*col+cw*.04,cy=oy+D+Hc-E-ch*(row+1)+ch*.04;
+        ex+=`<rect x="${cx}" y="${cy}" width="${cw*.92}" height="${ch*.9}" fill="rgba(100,70,30,.18)" stroke="#8a6534" stroke-width=".7" rx="1"/>`;
+        ex+=`<line x1="${cx+cw*.28}" y1="${cy+ch*.45}" x2="${cx+cw*.64}" y2="${cy+ch*.45}" stroke="#e8b84b" stroke-width="1.2" stroke-linecap="round"/>`;
+      }
+  }
+  let apoyo='';
+  if(tipoPata==='zocalo'){
+    const zy=oy+D+Hc;
+    apoyo=`<rect x="${ox+E*.4}" y="${zy}" width="${W-E*.8}" height="${PAT}" fill="#3a2810" stroke="#c8922a" stroke-width=".7"/>
+    <path d="M${ox+E*.4},${zy} L${ox+E*.4+D*.75},${zy-D*.46} L${ox+W-E*.8+D*.75},${zy-D*.46} L${ox+W-E*.8},${zy} Z" fill="#4a3318" stroke="#c8922a" stroke-width=".5"/>`;
+  } else if(tipoPata==='patas-madera'||tipoPata==='patas-metalicas'){
+    const zy=oy+D+Hc,pw2=4;
+    const totalPatas=Math.max(2,nPatas||4);
+    // La mitad de las patas van "adelante" (visibles) y la mitad "atrás" (ocultas por el cuerpo).
+    const frontCount=Math.ceil(totalPatas/2);
+    const margen=E*.4;
+    const anchoUtil=W-2*margen;
+    const legColor=tipoPata==='patas-metalicas'?'#9a9a9a':'#5a4020';
+    const legStroke=tipoPata==='patas-metalicas'?'#c8c8c8':'#8a6534';
+    for(let i=0;i<frontCount;i++){
+      const cx=frontCount===1?ox+W/2:ox+margen+(anchoUtil*(i/(frontCount-1)));
+      apoyo+=`<rect x="${cx-pw2/2}" y="${zy}" width="${pw2}" height="${PAT}" fill="${legColor}" stroke="${legStroke}" stroke-width=".6"/>`;
+    }
+    // Etiqueta aclarando la cantidad total (las traseras quedan ocultas por el cuerpo del mueble)
+    apoyo+=`<text x="${ox+W/2}" y="${zy+PAT+10}" text-anchor="middle" font-family="Fira Mono,monospace" font-size="7" fill="#7a6545">${totalPatas} patas en total${totalPatas>frontCount?' (traseras ocultas)':''}</text>`;
+  }
+  return`<svg viewBox="0 0 ${svgW} ${svgH+ (tipoPata==='patas-madera'||tipoPata==='patas-metalicas'?12:0)}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+  <defs>
+    <linearGradient id="gf" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8a5e2a"/><stop offset="100%" stop-color="#3d2812"/></linearGradient>
+    <linearGradient id="gt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a87038"/><stop offset="100%" stop-color="#5e4020"/></linearGradient>
+    <linearGradient id="gs" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#4a3018"/><stop offset="100%" stop-color="#280e04"/></linearGradient>
+  </defs>
+  <ellipse cx="${ox+W*.5+D*.4}" cy="${oy+D+H+6}" rx="${W*.52}" ry="4.5" fill="rgba(0,0,0,.3)"/>
+  <path d="M${ox},${oy+D} L${ox+W},${oy+D} L${ox+W},${oy+D+Hc} L${ox},${oy+D+Hc} Z" fill="url(#gf)" stroke="#c8922a" stroke-width=".9"/>
+  <path d="M${ox},${oy+D} L${ox+D},${oy} L${ox+D+W},${oy} L${ox+W},${oy+D} Z" fill="url(#gt)" stroke="#c8922a" stroke-width=".9"/>
+  <path d="M${ox+W},${oy+D} L${ox+D+W},${oy} L${ox+D+W},${oy+Hc} L${ox+W},${oy+D+Hc} Z" fill="url(#gs)" stroke="#c8922a" stroke-width=".9"/>
+  ${ex}${apoyo}
+  <text x="${ox+W*.5}" y="${oy+D+H+18}" text-anchor="middle" font-family="Fira Mono,monospace" font-size="8" fill="#7a6545">${a} cm</text>
+  <text x="${ox-10}" y="${oy+D+Hc*.5}" text-anchor="middle" font-family="Fira Mono,monospace" font-size="8" fill="#7a6545" transform="rotate(-90,${ox-10},${oy+D+Hc*.5})">${al} cm</text>
+</svg>`;
+}
+
+// ════════════════════════════════════════════════════
+// VISTAS 2D FRONTAL Y PLANTA
+// ════════════════════════════════════════════════════
+function svgFrontal(d){
+  const{a,al,p,e,estantes,divisiones,nPuertas,nCajones,altoCajon,colCajones,tipoPuerta,tipoPata,altoPata,altoPuertaPct,overlayPuerta,nPatas}=d;
+  const S=Math.min(220/al,300/a,2);
+  const W=a*S,H=(tipoPata!=='ninguno'?al:al)*S,E=e*S;
+  const alCuerpo=tipoPata!=='ninguno'?al-altoPata:al;
+  const Hc=alCuerpo*S;
+  const PAT=tipoPata!=='ninguno'?altoPata*S:0;
+  const ox=30,oy=20,svgW=W+ox+30,svgH=H+oy+25;
+  let ex='';
+
+  // Cuerpo
+  ex+=`<rect x="${ox}" y="${oy}" width="${W}" height="${Hc}" fill="rgba(138,94,42,.15)" stroke="#c8922a" stroke-width="1.2"/>`;
+
+  // Apoyo inferior: zócalo o patas, dibujado según la cantidad real configurada
+  if(tipoPata==='zocalo'&&PAT>0){
+    ex+=`<rect x="${ox+E*2}" y="${oy+Hc}" width="${W-E*4}" height="${PAT}" fill="rgba(100,70,30,.2)" stroke="#8a6534" stroke-width=".8"/>`;
+  } else if((tipoPata==='patas-madera'||tipoPata==='patas-metalicas')&&PAT>0){
+    const totalPatas=Math.max(2,nPatas||4);
+    const cols=Math.max(1,colCajones||1);
+    const perCol=Math.max(2,Math.round(totalPatas/2)); // patas visibles de frente (2 por columna visual mínimo)
+    const legW=Math.max(3,E*.6);
+    const margen=E*.6,util=W-2*margen;
+    const nVisible=Math.min(totalPatas,Math.max(2,Math.ceil(totalPatas/1))); // todas de frente en esta vista 2D
+    for(let i=0;i<nVisible;i++){
+      const cx=nVisible===1?ox+W/2:ox+margen+util*(i/(nVisible-1));
+      ex+=`<rect x="${cx-legW/2}" y="${oy+Hc}" width="${legW}" height="${PAT}" fill="rgba(100,70,30,.25)" stroke="#8a6534" stroke-width=".7"/>`;
+    }
+  }
+
+  // Estantes
+  const alInt=Hc-2*E;
+  if(estantes>0){
+    const step=alInt/(estantes+1);
+    for(let i=1;i<=estantes;i++){
+      const yy=oy+E+step*i;
+      ex+=`<line x1="${ox+E}" y1="${yy}" x2="${ox+W-E}" y2="${yy}" stroke="#c8922a" stroke-width="1.2"/>`;
+    }
+  }
+  // Divisiones
+  if(divisiones>0){
+    const step=(W-2*E)/(divisiones+1);
+    for(let i=1;i<=divisiones;i++){
+      const xx=ox+E+step*i;
+      ex+=`<line x1="${xx}" y1="${oy+E}" x2="${xx}" y2="${oy+Hc-E}" stroke="#e8b84b" stroke-width="1"/>`;
+    }
+  }
+  // Puertas
+  if(nPuertas>0){
+    const pw=W/nPuertas,phPct=(altoPuertaPct||100)/100,phSvg=alInt*phPct,pyOff=(alInt-phSvg)/2;
+    for(let i=0;i<nPuertas;i++){
+      const px=ox+pw*i+pw*.03,py=oy+E+pyOff;
+      ex+=`<rect x="${px}" y="${py}" width="${pw*.94}" height="${phSvg}" fill="rgba(200,146,42,.1)" stroke="#c8922a" stroke-width=".8" rx="1"/>`;
+      ex+=`<circle cx="${px+pw*.47}" cy="${py+phSvg/2}" r="3" fill="none" stroke="#e8b84b" stroke-width="1.2"/>`;
+    }
+  }
+  // Cajones
+  if(nCajones>0){
+    const ch=altoCajon*S,cols=Math.max(1,colCajones),cw=(W-2*E)/cols;
+    for(let row=0;row<nCajones;row++)
+      for(let col=0;col<cols;col++){
+        const cx=ox+E+cw*col+cw*.02,cy=oy+Hc-E-ch*(row+1)+ch*.02;
+        ex+=`<rect x="${cx}" y="${cy}" width="${cw*.96}" height="${ch*.96}" fill="rgba(100,70,30,.2)" stroke="#8a6534" stroke-width=".8" rx="1"/>`;
+        ex+=`<line x1="${cx+cw*.3}" y1="${cy+ch*.5}" x2="${cx+cw*.7}" y2="${cy+ch*.5}" stroke="#e8b84b" stroke-width="1.2" stroke-linecap="round"/>`;
+      }
+  }
+  // Cotas
+  ex+=`<line x1="${ox}" y1="${oy+H+8}" x2="${ox+W}" y2="${oy+H+8}" stroke="#7a6545" stroke-width=".7" marker-start="url(#arrow)" marker-end="url(#arrow)"/>`;
+  ex+=`<text x="${ox+W/2}" y="${oy+H+18}" text-anchor="middle" font-family="Fira Mono,monospace" font-size="9" fill="#7a6545">${a} cm</text>`;
+  ex+=`<line x1="${ox-10}" y1="${oy}" x2="${ox-10}" y2="${oy+Hc}" stroke="#7a6545" stroke-width=".7"/>`;
+  ex+=`<text x="${ox-18}" y="${oy+Hc/2}" text-anchor="middle" font-family="Fira Mono,monospace" font-size="9" fill="#7a6545" transform="rotate(-90,${ox-18},${oy+Hc/2})">${alCuerpo} cm</text>`;
+
+  return`<svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${svgW}px;display:block">
+  <defs><marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#7a6545"/></marker></defs>
+  ${ex}
+</svg>`;
+}
+
+function svgPlanta(d){
+  const{a,p,e,estantes,divisiones}=d;
+  const S=Math.min(200/p,280/a,2.5);
+  const W=a*S,D=p*S,E=e*S;
+  const ox=25,oy=20,svgW=W+ox+30,svgH=D+oy+30;
+  let ex='';
+  ex+=`<rect x="${ox}" y="${oy}" width="${W}" height="${D}" fill="rgba(138,94,42,.12)" stroke="#c8922a" stroke-width="1.2"/>`;
+  ex+=`<rect x="${ox}" y="${oy}" width="${E}" height="${D}" fill="rgba(138,94,42,.35)" stroke="#c8922a" stroke-width=".5"/>`;
+  ex+=`<rect x="${ox+W-E}" y="${oy}" width="${E}" height="${D}" fill="rgba(138,94,42,.35)" stroke="#c8922a" stroke-width=".5"/>`;
+  ex+=`<rect x="${ox}" y="${oy}" width="${W}" height="${E}" fill="rgba(138,94,42,.3)" stroke="#c8922a" stroke-width=".5"/>`;
+  ex+=`<rect x="${ox}" y="${oy+D-E}" width="${W}" height="${E}" fill="rgba(138,94,42,.3)" stroke="#c8922a" stroke-width=".5"/>`;
+  if(divisiones>0){
+    const step=(W-2*E)/(divisiones+1);
+    for(let i=1;i<=divisiones;i++){
+      const xx=ox+E+step*i;
+      ex+=`<rect x="${xx-E/2}" y="${oy+E}" width="${E}" height="${D-2*E}" fill="rgba(138,94,42,.35)" stroke="#e8b84b" stroke-width=".5"/>`;
+    }
+  }
+  ex+=`<text x="${ox+W/2}" y="${oy+D+18}" text-anchor="middle" font-family="Fira Mono,monospace" font-size="9" fill="#7a6545">${a} cm (ancho)</text>`;
+  ex+=`<text x="${ox-15}" y="${oy+D/2}" text-anchor="middle" font-family="Fira Mono,monospace" font-size="9" fill="#7a6545" transform="rotate(-90,${ox-15},${oy+D/2})">${p} cm (prof.)</text>`;
+  return`<svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${svgW}px;display:block">${ex}</svg>`;
+}
+
+let _currentView='iso';
+function setView(v){
+  _currentView=v;
+  document.querySelectorAll('.view-tab').forEach((b,i)=>{
+    b.classList.toggle('active',['iso','frontal','planta'][i]===v);
+  });
+  if(!window._svgData)return;
+  const d=window._svgData.d;
+  const wrap=document.getElementById('svg-main');
+  if(!wrap)return;
+  if(v==='iso')      wrap.innerHTML=svgMueble(d);
+  else if(v==='frontal') wrap.innerHTML=svgFrontal(d);
+  else if(v==='planta')  wrap.innerHTML=svgPlanta(d);
+}
+
+// ════════════════════════════════════════════════════
+// NESTING SVG
+// ════════════════════════════════════════════════════
+const NEST_COLORS=['#6b4f2a','#5a7a4a','#3a5a7a','#7a3a5a','#7a6a3a','#4a6a5a','#6a4a6a','#5a5a6a'];
+function renderNestingSVG(planchas){
+  if(planchas.length===0) return '<p style="color:var(--muted);font-size:.75rem;padding:.5rem .9rem">Sin piezas para distribuir.</p>';
+  const SCALE=0.9; // px/cm
+  const PW=PLANCHA_W*SCALE,PH=PLANCHA_H*SCALE;
+  const gap=12,cols=Math.min(planchas.length,3);
+  const rows=Math.ceil(planchas.length/cols);
+  const svgW=cols*(PW+gap)+gap,svgH=rows*(PH+gap+20)+gap;
+
+  const nombreColors={};let colorIdx=0;
+  let shapes='';
+  planchas.forEach((pl,pi)=>{
+    const col=pi%cols,row=Math.floor(pi/cols);
+    const ox=gap+col*(PW+gap),oy=gap+row*(PH+gap+20);
+    shapes+=`<rect x="${ox}" y="${oy}" width="${PW}" height="${PH}" fill="rgba(58,46,28,.4)" stroke="#4f3e24" stroke-width=".8"/>`;
+    shapes+=`<text x="${ox+PW/2}" y="${oy+PH+13}" text-anchor="middle" font-family="Fira Mono,monospace" font-size="9" fill="#7a6545">Plancha ${pi+1} — ${PLANCHA_W}×${PLANCHA_H} cm</text>`;
+    pl.piezas.forEach(pc=>{
+      if(!nombreColors[pc.nombre]){nombreColors[pc.nombre]=NEST_COLORS[colorIdx%NEST_COLORS.length];colorIdx++;}
+      const color=nombreColors[pc.nombre];
+      const x=ox+pc.x*SCALE,y=oy+pc.y*SCALE,w=pc.w*SCALE,h=pc.h*SCALE;
+      shapes+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${color}" fill-opacity=".7" stroke="#12100e" stroke-width=".5" rx="1"/>`;
+      if(w>18&&h>12) shapes+=`<text x="${x+w/2}" y="${y+h/2+3}" text-anchor="middle" font-family="Fira Mono,monospace" font-size="${Math.min(7,w/8)}" fill="#ede3cc" opacity=".9">${pc.w}×${pc.h}</text>`;
+    });
+  });
+
+  window._nestingColors=nombreColors;
+  return`<svg id="nesting-svg" viewBox="0 0 ${svgW} ${svgH}" style="width:100%;max-width:${svgW}px" xmlns="http://www.w3.org/2000/svg">${shapes}</svg>`;
+}
+
+function buildNestingLegend(planchas){
+  const leg=document.getElementById('nesting-legend');
+  if(!leg||!window._nestingColors)return;
+  leg.innerHTML=Object.entries(window._nestingColors).map(([nombre,color])=>
+    `<span><i style="background:${color};opacity:.8"></i>${nombre}</span>`
+  ).join('');
+}
+
+// ════════════════════════════════════════════════════
+// CALCULAR DESDE FORM
+// ════════════════════════════════════════════════════
+function calcularDesdeForm(mostrarAlerta=true){
+  if(!validarTodo()){
+    if(mostrarAlerta){
+      const primerError=document.querySelector('.err-msg:not(:empty)');
+      if(primerError){
+        const input=document.getElementById(primerError.id.replace('err-',''));
+        if(input){input.focus();input.scrollIntoView({behavior:'smooth',block:'center'});}
+      }
+      alert('No se pudo calcular: revisá los campos de Ancho, Alto, Profundidad o Espesor marcados en rojo. Mientras haya un valor inválido, la vista y la lista de corte no se actualizan.');
+    }
+    return false;
+  }
+  const d=leerForm();
+  renderizarResultados(d);
+  _autoCalcActivo=true;
+  return true;
+}
+
+// ════════════════════════════════════════════════════
+// RECÁLCULO AUTOMÁTICO
+// ════════════════════════════════════════════════════
+// Antes había que apretar "Calcular" después de CADA cambio (estantes, divisiones,
+// puertas, cajones, patas, etc.) o el panel de resultados quedaba desactualizado.
+// Ahora, una vez que se calculó por primera vez, cualquier cambio en el formulario
+// recalcula solo (con una pequeña espera para no recalcular en cada tecla).
+let _autoCalcActivo=false;
+let _autoCalcTimer=null;
+function programarAutoCalc(){
+  if(!_autoCalcActivo) return;
+  clearTimeout(_autoCalcTimer);
+  _autoCalcTimer=setTimeout(()=>{ calcularDesdeForm(false); },300);
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const panelIzq=document.querySelector('.app');
+  if(panelIzq){
+    panelIzq.addEventListener('input',e=>{
+      if(e.target.closest('#modo-clasico, .mod')) programarAutoCalc();
+    });
+    panelIzq.addEventListener('change',e=>{
+      if(e.target.closest('#modo-clasico, .mod')) programarAutoCalc();
+    });
+  }
+});
+
+// ════════════════════════════════════════════════════
+// PARSER LOCAL FALLBACK
+// ════════════════════════════════════════════════════
+function parsearLocal(desc){
+  const t=desc.toLowerCase();
+  const num=rx=>{const m=t.match(rx);return m?+m[1]:null};
+  const dims3=t.match(/(\d+)\s*[x×*]\s*(\d+)\s*[x×*]\s*(\d+)/);
+  let a=null,al=null,p=null;
+  if(dims3)[,al,a,p]=dims3.map(Number);
+  al=al||num(/(\d+)\s*(?:cm)?\s*(?:de\s*)?alto/)||num(/alto\s*(?:de\s*)?(\d+)/)||180;
+  a =a ||num(/(\d+)\s*(?:cm)?\s*(?:de\s*)?ancho/)||num(/ancho\s*(?:de\s*)?(\d+)/)||100;
+  p =p ||num(/(\d+)\s*(?:cm)?\s*(?:de\s*)?prof/)||num(/prof\s*(?:de\s*)?(\d+)/)||45;
+  const estantes   =num(/(\d+)\s*estantes?/)||0;
+  const divisiones =num(/(\d+)\s*(?:divisiones?|secciones?)/)||0;
+  const nPuertas   =num(/(\d+)\s*puertas?/)||(t.includes('puerta')?1:0);
+  const nCajones   =num(/(\d+)\s*cajones?/)||(t.includes('caj')?2:0);
+  const colCajones =num(/(\d+)\s*columnas?\s*(?:de\s*)?cajones?/)||1;
+  const altoCajon  =num(/cajones?\s*(?:de\s*)?(\d+)\s*cm/)||15;
+  const tipoPuerta =t.includes('corrediz')?'corrediza':t.includes('vaiv')?'vaiven':'abatible';
+  const tipoCajon  =t.includes('embutid')?'embutido':'overlay';
+  const mat        =t.includes('mdf')?'mdf':t.includes('enchapad')?'enchapado':t.includes('madera')?'madera':'melamina';
+  let tipoPata='ninguno',altoPata=10;
+  if(t.includes('zócalo')||t.includes('zocalo')){tipoPata='zocalo';altoPata=num(/z.calo\s*(?:de\s*)?(\d+)/)||10;}
+  else if(t.includes('patas metal')){tipoPata='patas-metalicas';altoPata=num(/patas?\s*(?:de\s*)?(\d+)/)||15;}
+  else if(t.includes('patas')){tipoPata='patas-madera';altoPata=num(/patas?\s*(?:de\s*)?(\d+)/)||10;}
+  const obs=`Medidas: ${a}×${al}×${p} cm (interpretadas localmente).\nPara mejor precisión, usá la app desde Netlify con IA activa.`;
+  return{a,al,p,e:1.8,mat,estantes,divisiones,nPuertas,tipoPuerta,altoPuertaPct:100,overlayPuerta:1.5,nCajones,altoCajon,colCajones,tipoCajon,fondoCajon:true,tipoPata,altoPata,nPatas:4,zocTrav:true,observaciones:obs};
+}
+
+// ════════════════════════════════════════════════════
+// MODO IA
+// ════════════════════════════════════════════════════
+async function interpretarConIA(){
+  const desc=document.getElementById('descripcion').value.trim();
+  if(!desc){alert('Escribí una descripción primero');return;}
+  const btn=document.getElementById('btn-ia');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Analizando…';
+  document.getElementById('results').innerHTML=`<div class="ai-block"><span class="spinner"></span> Interpretando…</div>`;
+
+  const prompt=`Sos experto en carpintería. El cliente describió: "${desc}"
+Respondé SOLO con JSON válido sin markdown:
+{"a":cm,"al":cm,"p":cm,"e":cm,"mat":"melamina"|"mdf"|"enchapado"|"madera","estantes":n,"divisiones":n,"nPuertas":n,"tipoPuerta":"abatible"|"corrediza"|"vaiven","altoPuertaPct":n,"overlayPuerta":cm,"nCajones":n,"altoCajon":cm,"colCajones":n,"tipoCajon":"overlay"|"embutido","tipoPata":"ninguno"|"zocalo"|"patas-madera"|"patas-metalicas","altoPata":cm,"nPatas":n,"observaciones":"texto"}
+Defaults: e=1.8,mat=melamina,tipoPuerta=abatible,altoPuertaPct=100,overlayPuerta=1.5,tipoCajon=overlay,altoCajon=15,colCajones=1,tipoPata=ninguno,altoPata=10,nPatas=4`;
+
+  let parsed=null,usóIA=true;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    const data=await resp.json();
+    const text=data.content?.[0]?.text||'';
+    try{parsed=JSON.parse(text.replace(/```json|```/g,'').trim());}
+    catch{throw new Error('json');}
+  }catch{
+    usóIA=false;parsed=parsearLocal(desc);
+  }
+  rellenarForm(parsed);
+  const aviso=usóIA?parsed.observaciones||null:`⚠️ Modo sin conexión — interpretación local\n${parsed.observaciones||''}`;
+  renderizarResultados({...parsed,pxm2:0,pxmo:0,pxherr:0},aviso);
+  setTab('clasico');
+  btn.disabled=false;btn.innerHTML='Interpretar con IA';
+  _autoCalcActivo=true;
+}
+
+// ════════════════════════════════════════════════════
+// PROYECTOS (localStorage)
+// ════════════════════════════════════════════════════
+function abrirModalGuardar(){
+  const d=leerForm();
+  document.getElementById('proj-nombre').value=d.nombre||'';
+  document.getElementById('modal-guardar').classList.add('show');
+}
+function guardarProyecto(){
+  const nombre=document.getElementById('proj-nombre').value.trim()||'Sin nombre';
+  const d={...leerForm(),nombre,fecha:new Date().toLocaleDateString('es-AR')};
+  const proyectos=JSON.parse(localStorage.getItem('mueble_proyectos')||'[]');
+  proyectos.unshift(d);
+  if(proyectos.length>20) proyectos.pop();
+  localStorage.setItem('mueble_proyectos',JSON.stringify(proyectos));
+  cerrarModal('modal-guardar');
+  alert(`✓ Proyecto "${nombre}" guardado.`);
+}
+function showProyectos(){
+  const proyectos=JSON.parse(localStorage.getItem('mueble_proyectos')||'[]');
+  const lista=document.getElementById('proj-list-ui');
+  if(proyectos.length===0){
+    lista.innerHTML='<p style="color:var(--muted);font-size:.75rem;padding:.5rem 0">No hay proyectos guardados.</p>';
+  } else {
+    lista.innerHTML=proyectos.map((p,i)=>`
+      <div class="proj-item" onclick="cargarProyecto(${i})">
+        <span class="proj-name">${p.nombre}</span>
+        <span class="proj-date">${p.fecha}</span>
+        <span style="color:var(--muted);font-size:.65rem">${p.a}×${p.al}×${p.p} cm</span>
+        <button class="btn-sm" onclick="event.stopPropagation();eliminarProyecto(${i})" style="padding:.15rem .4rem;font-size:.58rem">✕</button>
+      </div>`).join('');
+  }
+  document.getElementById('modal-proyectos').classList.add('show');
+}
+function cargarProyecto(idx){
+  const proyectos=JSON.parse(localStorage.getItem('mueble_proyectos')||'[]');
+  const d=proyectos[idx];
+  if(!d) return;
+  rellenarForm(d);
+  cerrarModal('modal-proyectos');
+  renderizarResultados(d);
+  _autoCalcActivo=true;
+}
+function eliminarProyecto(idx){
+  const proyectos=JSON.parse(localStorage.getItem('mueble_proyectos')||'[]');
+  proyectos.splice(idx,1);
+  localStorage.setItem('mueble_proyectos',JSON.stringify(proyectos));
+  showProyectos();
+}
+
+// ════════════════════════════════════════════════════
+// EXPORTAR CSV + TXT
+// ════════════════════════════════════════════════════
+function exportarCSV(){
+  if(!window._lastPiezas)return;
+  const BOM='\uFEFF';
+  let csv=BOM+'LISTA DE CORTE\n';
+  csv+='Pieza,Cantidad,Ancho (cm),Alto (cm),Area (m2),Nota\n';
+  window._lastPiezas.forEach(pc=>{
+    const ar=pc.ancho>0?(pc.cantidad*pc.ancho*pc.alto/10000).toFixed(4):'0';
+    csv+=`"${pc.nombre}",${pc.cantidad},${pc.ancho},${pc.alto},${ar},"${pc.nota}"\n`;
+  });
+  if(window._lastHerrajes){
+    csv+='\nHERRAJES Y CONSUMIBLES\nCategoria,Item,Cantidad,Unidad,Nota\n';
+    window._lastHerrajes.forEach(h=>{ csv+=`"${h.cat}","${h.nombre}",${h.cant},"${h.unidad}","${h.nota}"\n`; });
+  }
+  descargar(csv,'mueble_completo.csv','text/csv;charset=utf-8;');
+}
+function exportarTXT(){
+  if(!window._lastPiezas)return;
+  const d=window._lastData||{};
+  let txt=`DISEÑADOR DE MUEBLES PRO\n${'='.repeat(40)}\nProyecto: ${d.nombre||'Sin nombre'}\nFecha: ${new Date().toLocaleDateString('es-AR')}\n\nDIMENSIONES: ${d.a}×${d.al}×${d.p} cm | Espesor: ${d.e} cm | Material: ${d.mat}\n\nLISTA DE CORTE\n${'-'.repeat(40)}\n`;
+  window._lastPiezas.forEach(pc=>{
+    if(pc.ancho>0) txt+=`${pc.nombre.padEnd(24)} x${pc.cantidad}  ${pc.ancho}×${pc.alto} cm\n`;
+    else txt+=`${pc.nombre.padEnd(24)} x${pc.cantidad}  (${pc.nota})\n`;
+  });
+  if(window._lastHerrajes){
+    txt+=`\nHERRAJES Y CONSUMIBLES\n${'-'.repeat(40)}\n`;
+    let cat='';
+    window._lastHerrajes.forEach(h=>{
+      if(h.cat!==cat){txt+=`\n[${h.cat}]\n`;cat=h.cat;}
+      txt+=`  ${h.nombre.padEnd(36)} ${String(h.cant).padStart(4)} ${h.unidad}\n`;
+    });
+  }
+  descargar(txt,'mueble_lista.txt','text/plain;charset=utf-8;');
+}
+function descargar(contenido,nombre,tipo){
+  const blob=new Blob([contenido],{type:tipo});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=nombre;a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ════════════════════════════════════════════════════
+// TEMA CLARO / OSCURO
+// ════════════════════════════════════════════════════
+function toggleTheme(){
+  document.body.classList.toggle('light');
+  const btn=document.getElementById('btn-theme');
+  btn.textContent=document.body.classList.contains('light')?'☾ Oscuro':'☀ Claro';
+  localStorage.setItem('mueble_theme',document.body.classList.contains('light')?'light':'dark');
+}
+(function(){
+  if(localStorage.getItem('mueble_theme')==='light'){
+    document.body.classList.add('light');
+    const btn=document.getElementById('btn-theme');
+    if(btn) btn.textContent='☾ Oscuro';
+  }
+})();
+
+// ════════════════════════════════════════════════════
+// TUTORIAL
+// ════════════════════════════════════════════════════
+const TOUR=[
+  {t:'Bienvenido al Diseñador de Muebles PRO',p:'Esta app calcula todo lo que necesitás para fabricar un mueble: lista de corte, herrajes, nesting, presupuesto y verificación estructural.'},
+  {t:'1. Dimensiones generales',p:'Ingresá ancho, alto y profundidad del mueble en centímetros. También el espesor del tablero (18 mm = 1.8 cm es el estándar para melamina).'},
+  {t:'2. Módulos opcionales',p:'Expandí los módulos de Estantes, Divisiones, Puertas, Cajonera y Patas para agregar componentes al mueble. Los badges muestran cuántos configuraste.'},
+  {t:'3. Presupuesto',p:'Ingresá el precio por m² del tablero, mano de obra y herrajes para obtener un presupuesto completo al final.'},
+  {t:'4. Resultados',p:'Después de calcular vas a ver: vista previa isométrica/frontal/planta, verificación estructural, lista de corte, distribución en planchas (nesting), herrajes y presupuesto. Una vez que calculás por primera vez, cualquier cambio que hagas se refleja solo, sin tener que volver a apretar el botón.'},
+  {t:'5. Guardar y exportar',p:'Guardá proyectos en el dispositivo con el botón Guardar. Exportá a CSV o TXT para llevar al corte. Instalá la app desde el botón del header.'},
+];
+let _tourIdx=0;
+function showTour(){_tourIdx=0;renderTourStep();document.getElementById('tour-overlay').classList.add('show');}
+function tourClose(){document.getElementById('tour-overlay').classList.remove('show');}
+function tourNav(d){_tourIdx=Math.max(0,Math.min(TOUR.length-1,_tourIdx+d));renderTourStep();}
+function renderTourStep(){
+  const s=TOUR[_tourIdx];
+  document.getElementById('tour-title').textContent=s.t;
+  document.getElementById('tour-text').textContent=s.p;
+  const dots=document.getElementById('tour-dots');
+  dots.innerHTML=TOUR.map((_,i)=>`<div class="tour-dot${i===_tourIdx?' active':''}"></div>`).join('');
+}
+
+// ════════════════════════════════════════════════════
+// PWA INSTALL
+// ════════════════════════════════════════════════════
+let _deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();_deferredPrompt=e;
+  document.getElementById('btn-install').classList.add('show');
+});
+window.addEventListener('appinstalled',()=>{
+  _deferredPrompt=null;
+  const btn=document.getElementById('btn-install');
+  if(btn){btn.textContent='✓ Instalada';btn.disabled=true;}
+});
+async function instalarApp(){
+  if(!_deferredPrompt){
+    const isiOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    alert(isiOS
+      ?'En iPhone/iPad:\n1. Tocá el botón Compartir (cuadrado con flecha)\n2. Seleccioná "Agregar a pantalla de inicio"\n3. Confirmá'
+      :'Para instalar:\nChrome: menú (...) → "Instalar aplicación"\nEdge: menú (...) → "Aplicaciones" → "Instalar"');
+    return;
+  }
+  _deferredPrompt.prompt();
+  const{outcome}=await _deferredPrompt.userChoice;
+  _deferredPrompt=null;
+  if(outcome==='accepted'){const btn=document.getElementById('btn-install');if(btn){btn.textContent='✓ Instalada';btn.disabled=true;}}
+}
+
+// ════════════════════════════════════════════════════
+// OFFLINE
+// ════════════════════════════════════════════════════
+window.addEventListener('online',()=>{document.getElementById('offline-bar').style.display='none';});
+window.addEventListener('offline',()=>{document.getElementById('offline-bar').style.display='block';});
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(console.warn);
+</script>
+</body>
+</html>
