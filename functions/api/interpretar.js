@@ -7,8 +7,7 @@
 // Configuración necesaria en Cloudflare:
 //   Dashboard → Workers & Pages → (tu proyecto) → Settings → Environment variables
 //   Agregar: OPENROUTER_API_KEY = sk-or-...
-//   Después de agregar la variable hace falta un deploy NUEVO (un commit,
-//   o "Create deployment" manual — "Retry deployment" no siempre la toma).
+//   Después de agregar/editar la variable hace falta un deploy NUEVO.
 
 const SYSTEM_PROMPT = `Sos experto en carpintería y diseño de muebles a medida.
 A partir de la descripción en lenguaje natural que te da el cliente, extraé
@@ -27,12 +26,15 @@ altoCajon=15, colCajones=1, tipoPata=ninguno, altoPata=10, nPatas=4.
 relevante para lo que pidió el cliente (ej: pandeo de estantes, refuerzos,
 tipo de guía para cajones, etc).`;
 
-// Waterfall: si el primer modelo falla (rate limit, modelo caído, etc.)
-// probamos el siguiente. Todos gratuitos en OpenRouter.
+// "openrouter/free" es el auto-router gratuito de OpenRouter: elige solo
+// un modelo gratuito disponible en ese momento, así no dependemos de
+// nombres de modelo puntuales que OpenRouter rota/discontinúa seguido.
+// Como respaldo dejamos un par de IDs fijos conocidos por si el auto-router
+// fallara por algún motivo puntual.
 const MODELOS = [
-  'moonshotai/kimi-k2:free',
+  'openrouter/free',
+  'meta-llama/llama-4-scout:free',
   'meta-llama/llama-3.3-70b-instruct:free',
-  'google/gemini-2.0-flash-exp:free',
 ];
 
 function withCORS(resp) {
@@ -65,15 +67,23 @@ async function llamarOpenRouter(apiKey, modelo, desc, origin) {
     }),
   });
 
+  const raw = await resp.text();
   if (!resp.ok) {
-    const detail = await resp.text();
-    const err = new Error(`OpenRouter ${modelo}: ${resp.status}`);
+    const err = new Error(`${modelo}: HTTP ${resp.status}`);
     err.status = resp.status;
-    err.detail = detail;
+    err.detail = raw;
     throw err;
   }
 
-  const data = await resp.json();
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    const err = new Error(`${modelo}: respuesta no-JSON`);
+    err.detail = raw.slice(0, 300);
+    throw err;
+  }
+
   return data.choices?.[0]?.message?.content || '';
 }
 
@@ -109,7 +119,7 @@ export async function onRequestPost(context) {
   }
 
   const origin = request.headers.get('Origin');
-  let ultimoError = null;
+  const intentos = [];
 
   for (const modelo of MODELOS) {
     try {
@@ -120,15 +130,17 @@ export async function onRequestPost(context) {
           headers: { 'Content-Type': 'application/json' },
         }));
       }
+      intentos.push({ modelo, error: 'respuesta vacía' });
     } catch (err) {
-      ultimoError = err;
-      // sigue con el próximo modelo del waterfall
+      intentos.push({ modelo, status: err.status || null, detail: err.detail || err.message });
     }
   }
 
+  // Ninguno funcionó: devolvemos el detalle de CADA intento para poder
+  // diagnosticar exactamente qué pasó con cada modelo.
   return withCORS(new Response(JSON.stringify({
     error: 'No se pudo obtener respuesta de ningún modelo de OpenRouter.',
-    detail: ultimoError ? (ultimoError.detail || ultimoError.message) : null,
+    intentos,
   }), {
     status: 502,
     headers: { 'Content-Type': 'application/json' },
