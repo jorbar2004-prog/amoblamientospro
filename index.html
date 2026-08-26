@@ -355,7 +355,11 @@ select option{background:var(--s2)}
         <div class="stepper"><button onclick="step('divisiones',-1)">-</button>
           <input type="number" id="divisiones" value="0" min="0" max="10" oninput="sbadge('divisiones','bdg-div')"/>
           <button onclick="step('divisiones',1)">+</button></div></div>
-      <div class="hint" style="border:none;padding-top:0">Divide el interior en secciones iguales.</div>
+      <div class="tog-row">
+        <span class="tog-lbl">Alinear con bordes de puertas</span>
+        <label class="toggle"><input type="checkbox" id="alinear-div-puertas"/><span class="slider"></span></label>
+      </div>
+      <div class="hint" style="border:none;padding-top:0">Sin alinear: secciones parejas. Alineado: cada división se corre al borde de puerta más cercano (necesita al menos "divisiones+1" puertas).</div>
     </div>
   </div>
 
@@ -438,6 +442,12 @@ select option{background:var(--s2)}
         <span class="tog-lbl">Z&oacute;calo con traves&ntilde;o posterior</span>
         <label class="toggle"><input type="checkbox" id="zoc-trav" checked/><span class="slider"></span></label>
       </div>
+      <div class="field" style="margin-top:.3rem"><label>Ensamble laterales / base</label>
+        <select id="tipo-ensamble">
+          <option value="flanquean">Laterales flanquean la base (por defecto)</option>
+          <option value="apoyan">Laterales apoyan sobre la base</option>
+        </select></div>
+      <div class="hint" style="border:none;padding-top:0">"Flanquean": la base va encajada entre los laterales (laterales de piso a techo). "Apoyan": la base va de punta a punta y los laterales se paran arriba de ella.</div>
     </div>
   </div>
 
@@ -557,6 +567,7 @@ function leerForm(){
     pxherr:+g('precio-herrajes').value||0,
     estantes:   +g('estantes').value       ||0,
     divisiones: +g('divisiones').value     ||0,
+    alinearDivPuertas: g('alinear-div-puertas').checked,
     nPuertas:   +g('n-puertas').value      ||0,
     tipoPuerta: g('tipo-puerta').value,
     altoPuertaPct:+g('alto-puerta-pct').value||100,
@@ -570,6 +581,7 @@ function leerForm(){
     altoPata:   +g('alto-pata').value      ||10,
     nPatas:     +g('n-patas').value        ||4,
     zocTrav:    g('zoc-trav').checked,
+    tipoEnsamble: g('tipo-ensamble').value,
   };
 }
 function rellenarForm(d){
@@ -578,6 +590,10 @@ function rellenarForm(d){
   if(d.mat) document.getElementById('material').value=d.mat;
   s('estantes',d.estantes||0);    sbadge('estantes','bdg-est');
   s('divisiones',d.divisiones||0);sbadge('divisiones','bdg-div');
+  const elAlinear=document.getElementById('alinear-div-puertas');
+  if(elAlinear) elAlinear.checked=!!d.alinearDivPuertas;
+  const elEnsamble=document.getElementById('tipo-ensamble');
+  if(elEnsamble&&d.tipoEnsamble) elEnsamble.value=d.tipoEnsamble;
   s('n-puertas',d.nPuertas||0);   sbadge('n-puertas','bdg-puerta');
   s('n-cajones',d.nCajones||0);   sbadge('n-cajones','bdg-caj');
   s('alto-cajon',d.altoCajon||15);
@@ -590,16 +606,17 @@ function rellenarForm(d){
   if(d.nPuertas>0)   openMod('mod-puerta');
   if(d.nCajones>0)   openMod('mod-caj');
   if(d.tipoPata&&d.tipoPata!=='ninguno') openMod('mod-pata');
+  if(d.tipoEnsamble&&d.tipoEnsamble!=='flanquean') openMod('mod-pata');
 }
 
 // ════════════════════════════════════════════════════
 // MOTOR — TABLEROS
 // ════════════════════════════════════════════════════
 function calcularPiezas(d){
-  const{a,al,p,e,estantes,divisiones,
+  const{a,al,p,e,estantes,divisiones,alinearDivPuertas,
     nPuertas,tipoPuerta,altoPuertaPct,overlayPuerta,
     nCajones,altoCajon,colCajones,tipoCajon,fondoCajon,
-    tipoPata,altoPata,nPatas,zocTrav}=d;
+    tipoPata,altoPata,nPatas,zocTrav,tipoEnsamble}=d;
   const piezas=[];
   const add=(nombre,cantidad,ancho,alto,nota='',tipo='tablero')=>
     cantidad>0&&piezas.push({nombre,cantidad,ancho:+ancho.toFixed(1),alto:+alto.toFixed(1),nota,tipo});
@@ -608,17 +625,61 @@ function calcularPiezas(d){
   const alInt=alCuerpo-2*e;
   const aInt=a-2*e;
 
-  add('Lateral',       2, alCuerpo, p);
-  add('Base',          1, aInt,     p);
+  // Ensamble laterales/base:
+  // "flanquean" (default): laterales de piso a techo del cuerpo, base encajada entre ellos.
+  // "apoyan": base de punta a punta, laterales se paran arriba de ella (quedan e cm más cortos).
+  const apoyan=tipoEnsamble==='apoyan';
+  add('Lateral',       2, apoyan?alCuerpo-e:alCuerpo, p, apoyan?'apoya sobre la base':'');
+  add('Base',          1, apoyan?a:aInt,     p, apoyan?'de punta a punta':'entre laterales');
   add('Tapa',          1, aInt,     p);
   add('Fondo HDF 4mm', 1, a, alCuerpo, 'ranura o clavado','hdf');
 
-  if(estantes>0){
-    const mult=divisiones>0?divisiones+1:1;
-    const anchoEst=divisiones>0?aInt/(divisiones+1):aInt;
-    add('Estante',estantes*mult,anchoEst,p-e,divisiones>0?`${divisiones+1} celdas`:'');
+  // Posiciones de corte de las divisiones dentro del interior (0..aInt).
+  // Por defecto, parejas. Si alinearDivPuertas está activo y hay suficientes
+  // puertas (nPuertas-1 bordes disponibles >= divisiones), se corren al
+  // borde de puerta más cercano en vez de repartirse parejo.
+  let cortesDiv=[];
+  let divisionesAlineadas=false;
+  if(divisiones>0){
+    const bordesDisponibles=nPuertas>1?nPuertas-1:0;
+    if(alinearDivPuertas&&bordesDisponibles>=divisiones){
+      divisionesAlineadas=true;
+      const idxUsados=new Set();
+      for(let i=1;i<=divisiones;i++){
+        let idx=Math.round(i*nPuertas/(divisiones+1));
+        idx=Math.min(Math.max(idx,1),nPuertas-1);
+        while(idxUsados.has(idx)&&idx<nPuertas-1) idx++;
+        idxUsados.add(idx);
+        cortesDiv.push(idx/nPuertas*aInt);
+      }
+      cortesDiv.sort((x,y)=>x-y);
+    } else {
+      for(let i=1;i<=divisiones;i++) cortesDiv.push(aInt/(divisiones+1)*i);
+    }
   }
-  if(divisiones>0) add('División vertical',divisiones,alInt,p-e);
+  d._divisionBoundaries=cortesDiv; // usado por el renderer SVG para dibujar en la posición real
+  d._divisionesAlineadas=divisionesAlineadas;
+
+  if(estantes>0){
+    if(divisiones>0){
+      const limites=[0,...cortesDiv,aInt];
+      const anchosSecciones=[];
+      for(let i=0;i<limites.length-1;i++) anchosSecciones.push(limites[i+1]-limites[i]);
+      // Agrupamos secciones de ancho igual (redondeado a 1 decimal) en una sola línea de corte.
+      const grupos=new Map();
+      anchosSecciones.forEach(w=>{
+        const key=w.toFixed(1);
+        grupos.set(key,(grupos.get(key)||0)+estantes);
+      });
+      const nSecciones=anchosSecciones.length;
+      grupos.forEach((cant,w)=>{
+        add('Estante',cant,+w,p-e,`${nSecciones} secciones${divisionesAlineadas?', alineado a puertas':''}`);
+      });
+    } else {
+      add('Estante',estantes,aInt,p-e,'');
+    }
+  }
+  if(divisiones>0) add('División vertical',divisiones,alInt,p-e,divisionesAlineadas?'alineada a puertas':'');
 
   if(nPuertas>0){
     const anchoPuerta=a/nPuertas+overlayPuerta;
@@ -742,12 +803,27 @@ function validacionesEstructurales(d,piezas){
   const alertas=[];
 
   // Pandeo de estantes (vano libre > 70 cm en melamina 18mm → riesgo)
-  const vanoEst=divisiones>0?aInt/(divisiones+1):aInt;
+  // Si hay divisiones con posiciones custom (alineadas a puertas), el vano
+  // relevante es el de la sección MÁS ANCHA, no el promedio parejo.
+  const bnds=Array.isArray(d._divisionBoundaries)?d._divisionBoundaries:null;
+  let vanoEst;
+  if(bnds&&bnds.length===divisiones&&divisiones>0){
+    const limites=[0,...bnds,aInt];
+    vanoEst=Math.max(...limites.slice(1).map((v,i)=>v-limites[i]));
+  } else {
+    vanoEst=divisiones>0?aInt/(divisiones+1):aInt;
+  }
   if(estantes>0&&vanoEst>70&&e<=1.8){
-    alertas.push({tipo:'warn',msg:`Vano de estante: ${vanoEst.toFixed(1)} cm. En melamina 18 mm puede pandear. Considerá usar refuerzo central o aumentar espesor a 25 mm.`});
+    alertas.push({tipo:'warn',msg:`Vano de estante más ancho: ${vanoEst.toFixed(1)} cm. En melamina 18 mm puede pandear. Considerá usar refuerzo central o aumentar espesor a 25 mm.`});
   }
   if(estantes>0&&vanoEst>90){
-    alertas.push({tipo:'err',msg:`Vano de estante: ${vanoEst.toFixed(1)} cm es excesivo para tableros estándar. Se recomienda máximo 80 cm sin refuerzo.`});
+    alertas.push({tipo:'err',msg:`Vano de estante más ancho: ${vanoEst.toFixed(1)} cm es excesivo para tableros estándar. Se recomienda máximo 80 cm sin refuerzo.`});
+  }
+
+  // Alineación de divisiones con puertas pedida pero no viable
+  if(d.alinearDivPuertas&&divisiones>0&&!d._divisionesAlineadas){
+    const bordesDisp=d.nPuertas>1?d.nPuertas-1:0;
+    alertas.push({tipo:'warn',msg:`Pediste alinear ${divisiones} división(es) con puertas, pero solo hay ${bordesDisp} borde(s) de puerta disponible(s) (se necesitan al menos ${divisiones}). Se usó reparto parejo en su lugar.`});
   }
 
   // Cajones más altos que el espacio disponible
@@ -1018,9 +1094,10 @@ function svgMueble(d){
     }
   }
   if(divisiones>0){
+    const bnds=Array.isArray(d._divisionBoundaries)&&d._divisionBoundaries.length===divisiones?d._divisionBoundaries:null;
     const step=(W-2*E)/(divisiones+1);
     for(let i=1;i<=divisiones;i++){
-      const xx=ox+E+step*i;
+      const xx=bnds?ox+E+bnds[i-1]*S:ox+E+step*i;
       ex+=`<line x1="${xx}" y1="${oy+D+E}" x2="${xx}" y2="${oy+D+Hc-E}" stroke="#e8b84b" stroke-width=".75" stroke-dasharray="4 2" opacity=".85"/>`;
     }
   }
@@ -1122,9 +1199,10 @@ function svgFrontal(d){
   }
   // Divisiones
   if(divisiones>0){
+    const bnds=Array.isArray(d._divisionBoundaries)&&d._divisionBoundaries.length===divisiones?d._divisionBoundaries:null;
     const step=(W-2*E)/(divisiones+1);
     for(let i=1;i<=divisiones;i++){
-      const xx=ox+E+step*i;
+      const xx=bnds?ox+E+bnds[i-1]*S:ox+E+step*i;
       ex+=`<line x1="${xx}" y1="${oy+E}" x2="${xx}" y2="${oy+Hc-E}" stroke="#e8b84b" stroke-width="1"/>`;
     }
   }
@@ -1171,9 +1249,10 @@ function svgPlanta(d){
   ex+=`<rect x="${ox}" y="${oy}" width="${W}" height="${E}" fill="rgba(138,94,42,.3)" stroke="#c8922a" stroke-width=".5"/>`;
   ex+=`<rect x="${ox}" y="${oy+D-E}" width="${W}" height="${E}" fill="rgba(138,94,42,.3)" stroke="#c8922a" stroke-width=".5"/>`;
   if(divisiones>0){
+    const bnds=Array.isArray(d._divisionBoundaries)&&d._divisionBoundaries.length===divisiones?d._divisionBoundaries:null;
     const step=(W-2*E)/(divisiones+1);
     for(let i=1;i<=divisiones;i++){
-      const xx=ox+E+step*i;
+      const xx=bnds?ox+E+bnds[i-1]*S:ox+E+step*i;
       ex+=`<rect x="${xx-E/2}" y="${oy+E}" width="${E}" height="${D-2*E}" fill="rgba(138,94,42,.35)" stroke="#e8b84b" stroke-width=".5"/>`;
     }
   }
